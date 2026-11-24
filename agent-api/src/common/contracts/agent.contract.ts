@@ -120,3 +120,4 @@ export type SseEventPayload =
       latencyMs: number;
     }
   | { type: "error"; message: string };
+

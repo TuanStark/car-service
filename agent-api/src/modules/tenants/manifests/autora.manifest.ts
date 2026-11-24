@@ -103,3 +103,4 @@ export const AUTORA_TENANT_MANIFEST: SiteManifest = {
     },
   ],
 };
+

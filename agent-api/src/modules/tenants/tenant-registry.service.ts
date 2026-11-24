@@ -28,3 +28,4 @@ export class TenantRegistryService {
     return Array.from(this.manifests.keys());
   }
 }
+

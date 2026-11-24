@@ -36,3 +36,4 @@ services:
 volumes:
   agent_pgdata:
   agent_redisdata:
+

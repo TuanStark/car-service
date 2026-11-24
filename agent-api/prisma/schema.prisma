@@ -102,3 +102,4 @@ model AuditLog {
   @@index([tenantId, createdAt])
   @@index([sessionId])
 }
+

@@ -103,3 +103,4 @@ export interface IBusinessConnector {
   getMyVehicles(userId: string): Promise<readonly VehicleDto[]>;
   getMyOrders(userId: string): Promise<readonly OrderSummaryDto[]>;
 }
+

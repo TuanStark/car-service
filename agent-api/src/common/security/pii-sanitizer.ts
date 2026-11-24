@@ -53,3 +53,4 @@ export function formatUntrustedContextBlock(context?: PageContext): string {
   };
   return `<untrusted_host_context>\n${JSON.stringify(safePayload)}\n</untrusted_host_context>`;
 }
+
