@@ -70,9 +70,13 @@ export default function RootLayout({
   return (
     <html
       lang="vi"
+      suppressHydrationWarning
       className={`${barlowCondensed.variable} ${beVietnamPro.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-canvas text-ink">
+      <body
+        suppressHydrationWarning
+        className="min-h-full flex flex-col bg-canvas text-ink"
+      >
         <StoreProvider>
           <Navbar />
           <main className="flex-1 pb-20 lg:pb-0">{children}</main>
