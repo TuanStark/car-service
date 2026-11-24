@@ -1,0 +1,96 @@
+@import "tailwindcss";
+
+:root {
+  /* Daylight Precision Semantic Palette */
+  --bg-canvas: #F6F7F9;
+  --bg-surface: #FFFFFF;
+  --bg-surface-subtle: #ECEFF4;
+  --bg-surface-hover: #E2E7EF;
+
+  --ink-primary: #111827;
+  --ink-secondary: #525E70;
+  --ink-muted: #64748B;
+  --ink-inverse: #FFFFFF;
+
+  /* Brand & Signal Accents */
+  --brand-primary: #0E4D64;
+  --brand-primary-hover: #0A3B4D;
+  --brand-soft: #E6F0F4;
+  --accent-signal: #E85A24;
+  --accent-signal-hover: #D04917;
+  --accent-soft: #FFF1EB;
+
+  /* Architectural Borders */
+  --border-hairline: #E2E8F0;
+  --border-strong: #CBD5E1;
+}
+
+@theme inline {
+  --color-canvas: var(--bg-canvas);
+  --color-surface: var(--bg-surface);
+  --color-surface-subtle: var(--bg-surface-subtle);
+  --color-surface-hover: var(--bg-surface-hover);
+  --color-ink: var(--ink-primary);
+  --color-ink-secondary: var(--ink-secondary);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-inverse: var(--ink-inverse);
+  --color-brand: var(--brand-primary);
+  --color-brand-hover: var(--brand-primary-hover);
+  --color-brand-soft: var(--brand-soft);
+  --color-accent: var(--accent-signal);
+  --color-accent-hover: var(--accent-signal-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-line: var(--border-hairline);
+  --color-line-strong: var(--border-strong);
+
+  --font-display: var(--font-barlow-condensed), sans-serif;
+  --font-sans: var(--font-be-vietnam-pro), sans-serif;
+  --font-mono: var(--font-jetbrains-mono), monospace;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    background-color: var(--bg-canvas);
+    color: var(--ink-primary);
+  }
+
+  body {
+    background-color: var(--bg-canvas);
+    color: var(--ink-primary);
+    font-family: var(--font-be-vietnam-pro), system-ui, -apple-system, sans-serif;
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    background-color: var(--brand-primary);
+    color: var(--ink-inverse);
+  }
+}
+
+/* Light architectural drafting grid */
+.workshop-grid-bg {
+  background-image:
+    linear-gradient(to right, rgba(14, 77, 100, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(14, 77, 100, 0.04) 1px, transparent 1px);
+  background-size: 56px 56px;
+}
+
+/* Clean light scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-canvas);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--brand-primary);
+}

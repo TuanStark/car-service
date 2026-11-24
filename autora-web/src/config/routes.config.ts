@@ -1,0 +1,15 @@
+export const ROUTES = {
+  HOME: "/",
+  SERVICES: "/dich-vu",
+  SERVICE_DETAIL: (slug: string) => `/dich-vu/${slug}`,
+  GARAGES: "/tim-garage",
+  GARAGE_DETAIL: (slug: string) => `/garage/${slug}`,
+  PRICING: "/bang-gia",
+  CART: "/gio-hang",
+  CHECKOUT: "/thanh-toan",
+  WISHLIST: "/yeu-thich",
+  ACCOUNT: "/tai-khoan",
+  BLOG: "/tin-tuc",
+  BLOG_DETAIL: (slug: string) => `/tin-tuc/${slug}`,
+  CONTACT: "/lien-he",
+} as const;
