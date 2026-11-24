@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @source "../../../agent-sdk/src/react/agent-widget.tsx";
+@source "../../../agent-sdk/src/react/agent-stage-overlay.tsx";
 
 :root {
   /* Clean Bright Automotive E-Commerce Palette */

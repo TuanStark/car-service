@@ -14,6 +14,8 @@ export interface AuditEventInput {
     | "tool.denied"
     | "action.proposed"
     | "action.rejected"
+    | "workflow.validated"
+    | "workflow.step_rejected"
     | "rate_limit.exceeded";
   readonly toolName?: string;
   readonly actionTarget?: string;

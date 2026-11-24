@@ -5,7 +5,26 @@ import {
   AgentActionSchema,
   type SiteManifest,
   type TrustedActorContext,
+  type UiWorkflowPlan,
+  UiWorkflowPlanSchema,
+  type UiWorkflowStep,
 } from "@/common/contracts/agent.contract";
+
+const TARGET_ID_REGEX = /^[a-zA-Z0-9._:-]+$/;
+
+/**
+ * Matches a concrete semantic UI targetId (e.g. "garage.filter.city.hcm")
+ * against a registered manifest wildcard pattern (e.g. "garage.filter.city.*").
+ */
+export function matchTargetPattern(pattern: string, targetId: string): boolean {
+  if (!TARGET_ID_REGEX.test(targetId)) {
+    return false;
+  }
+  const escaped = pattern
+    .replace(/[.+?^${}()|[\]\\]/g, "\\$&")
+    .replace(/\*/g, "[a-zA-Z0-9_:-]+");
+  return new RegExp(`^${escaped}$`).test(targetId);
+}
 
 const ROLE_HIERARCHY: Record<ActorRole, readonly ActorRole[]> = {
   guest: ["guest"],
@@ -124,5 +143,99 @@ export class RbacService {
 
     return { valid, rejected };
   }
-}
 
+  /**
+   * Validates an LLM/synthesized UI Co-Browsing workflow plan against tenant uiTargets:
+   * 1) Schema & step count limit (<= 12 steps)
+   * 2) Every step targetId matches an allowlisted pattern in manifest.uiTargets
+   * 3) Any target marked risk="confirm_only" strictly rejects click/type/select
+   */
+  validateWorkflowPlan(
+    manifest: SiteManifest,
+    rawPlan: unknown
+  ): {
+    plan: UiWorkflowPlan | null;
+    rejected: Array<{ stepId?: string; targetId?: string; reason: string }>;
+  } {
+    const parsed = UiWorkflowPlanSchema.safeParse(rawPlan);
+    if (!parsed.success) {
+      return {
+        plan: null,
+        rejected: [{ reason: "Invalid workflow plan schema" }],
+      };
+    }
+
+    const targets = manifest.uiTargets ?? [];
+    if (targets.length === 0) {
+      return {
+        plan: null,
+        rejected: [{ reason: "Tenant manifest declares no uiTargets" }],
+      };
+    }
+
+    const validSteps: UiWorkflowStep[] = [];
+    const rejected: Array<{ stepId?: string; targetId?: string; reason: string }> =
+      [];
+
+    for (const step of parsed.data.steps) {
+      const matchedTarget = targets.find((decl) =>
+        matchTargetPattern(decl.targetPattern, step.targetId)
+      );
+
+      if (!matchedTarget) {
+        rejected.push({
+          stepId: step.id,
+          targetId: step.targetId,
+          reason: `Target "${step.targetId}" is outside tenant uiTargets allowlist`,
+        });
+        continue;
+      }
+
+      const isMutatingAction =
+        step.action === "click" ||
+        step.action === "type" ||
+        step.action === "select";
+
+      if (matchedTarget.risk === "confirm_only" && isMutatingAction) {
+        rejected.push({
+          stepId: step.id,
+          targetId: step.targetId,
+          reason: `Target "${step.targetId}" is confirm_only; autonomous "${step.action}" is forbidden`,
+        });
+        continue;
+      }
+
+      if (
+        (step.action === "click" ||
+          step.action === "type" ||
+          step.action === "select") &&
+        !matchedTarget.interactions.includes(step.action)
+      ) {
+        rejected.push({
+          stepId: step.id,
+          targetId: step.targetId,
+          reason: `Interaction "${step.action}" is not allowed for target "${step.targetId}"`,
+        });
+        continue;
+      }
+
+      validSteps.push({
+        id: step.id,
+        action: step.action,
+        targetId: step.targetId,
+        value: step.value,
+        narration: step.narration,
+        fallbackRoute: step.fallbackRoute,
+        delayMs: step.delayMs,
+      });
+    }
+
+    return {
+      plan:
+        validSteps.length > 0
+          ? { title: parsed.data.title, steps: validSteps }
+          : null,
+      rejected,
+    };
+  }
+}

@@ -103,7 +103,10 @@ export function ServiceProductCard({ product }: ServiceProductCardProps) {
 
           {/* Product Title */}
           <h3 className="mt-1.5 line-clamp-2 min-h-[2.6rem] text-sm sm:text-[15px] font-semibold leading-snug text-ink group-hover:text-brand transition-colors">
-            <Link href={ROUTES.SERVICE_DETAIL(product.slug)}>
+            <Link
+              href={ROUTES.SERVICE_DETAIL(product.slug)}
+              data-agent-target={`service.card.${product.slug}.view`}
+            >
               {product.name}
             </Link>
           </h3>
@@ -146,6 +149,7 @@ export function ServiceProductCard({ product }: ServiceProductCardProps) {
           <button
             type="button"
             onClick={() => addToCart(product, 1)}
+            data-agent-target={`service.card.${product.slug}.add_to_cart`}
             className="mt-3.5 flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-brand-soft border border-brand/20 font-sans text-xs sm:text-sm font-semibold text-brand transition-all hover:bg-brand hover:border-brand hover:text-ink-inverse cursor-pointer"
           >
             <ShoppingBag className="h-3.5 w-3.5" />

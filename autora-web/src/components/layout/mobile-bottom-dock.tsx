@@ -14,8 +14,18 @@ export function MobileBottomDock() {
 
   const items = [
     { label: "Trang chủ", href: ROUTES.HOME, icon: Home, exact: true },
-    { label: "Dịch vụ", href: ROUTES.SERVICES, icon: Wrench },
-    { label: "Tìm gara", href: ROUTES.GARAGES, icon: MapPin },
+    {
+      label: "Dịch vụ",
+      href: ROUTES.SERVICES,
+      icon: Wrench,
+      targetId: "nav.services",
+    },
+    {
+      label: "Tìm gara",
+      href: ROUTES.GARAGES,
+      icon: MapPin,
+      targetId: "nav.garages",
+    },
   ];
 
   return (
@@ -34,6 +44,7 @@ export function MobileBottomDock() {
             <Link
               key={item.href}
               href={item.href}
+              data-agent-target={item.targetId}
               className={cn(
                 "flex min-h-[48px] flex-col items-center justify-center gap-0.5 text-[10px] font-semibold transition-colors",
                 active ? "text-brand" : "text-ink-secondary"
@@ -49,6 +60,7 @@ export function MobileBottomDock() {
         <button
           type="button"
           onClick={() => setMiniCartOpen(true)}
+          data-agent-target="nav.cart"
           className="relative flex min-h-[48px] flex-col items-center justify-center gap-0.5 text-[10px] font-semibold text-ink-secondary hover:text-brand cursor-pointer"
         >
           <div className="relative">

@@ -64,13 +64,15 @@ export class AgyCliProvider implements ILlmProvider {
       // Keep raw stdout if plain text
     }
 
-    const { cleanText, actions, toolCalls } = extractActionsAndCleanText(rawText);
+    const { cleanText, actions, toolCalls, workflow } =
+      extractActionsAndCleanText(rawText);
 
     return {
       provider: this.name,
       text: cleanText,
       toolCalls,
       proposedActions: actions,
+      proposedWorkflow: workflow,
     };
   }
 }

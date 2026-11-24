@@ -267,6 +267,7 @@ export default function CheckoutPage() {
                   </label>
                   <select
                     id="co-garage"
+                    data-agent-target="checkout.select.garage"
                     value={selectedGarageId}
                     onChange={(e) => setSelectedGarageId(e.target.value)}
                     className="h-11 w-full rounded-md border border-line-strong bg-surface px-4 text-sm text-ink focus:border-brand focus:outline-none"
@@ -290,6 +291,7 @@ export default function CheckoutPage() {
                     </label>
                     <Input
                       id="co-date"
+                      data-agent-target="checkout.input.date"
                       type="date"
                       value={dateIso}
                       onChange={(e) => setDateIso(e.target.value)}
@@ -307,6 +309,7 @@ export default function CheckoutPage() {
                         <button
                           key={slot}
                           type="button"
+                          data-agent-target={`checkout.slot.${slot}`}
                           onClick={() => setTimeSlot(slot)}
                           className={
                             timeSlot === slot
@@ -419,6 +422,7 @@ export default function CheckoutPage() {
                   </label>
                   <Input
                     id="co-notes"
+                    data-agent-target="checkout.input.notes"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="VD: Kiểm tra thêm tiếng kêu gầm trước khi qua gờ giảm tốc..."
@@ -514,7 +518,13 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                <Button type="submit" variant="accent" size="xl" className="w-full">
+                <Button
+                  type="submit"
+                  variant="accent"
+                  size="xl"
+                  className="w-full"
+                  data-agent-target="checkout.submit_booking"
+                >
                   XÁC NHẬN ĐẶT LỊCH DỊCH VỤ
                 </Button>
               </div>

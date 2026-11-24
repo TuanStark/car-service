@@ -104,6 +104,7 @@ export function ShopCatalogClient() {
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-muted" />
                 <Input
                   id="shop-keyword"
+                  data-agent-target="service.filter.search"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="VD: thay dầu, ceramic..."
@@ -121,6 +122,7 @@ export function ShopCatalogClient() {
                 <li>
                   <button
                     type="button"
+                    data-agent-target="service.filter.category.all"
                     onClick={() => setCategoryId("all")}
                     className={cn(
                       "flex w-full items-center justify-between rounded-md px-2.5 py-2 text-xs transition-colors cursor-pointer",
@@ -139,6 +141,7 @@ export function ShopCatalogClient() {
                   <li key={cat.id}>
                     <button
                       type="button"
+                      data-agent-target={`service.filter.category.${cat.id}`}
                       onClick={() => setCategoryId(cat.id)}
                       className={cn(
                         "flex w-full items-center justify-between rounded-md px-2.5 py-2 text-xs transition-colors cursor-pointer",

@@ -3,12 +3,17 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { AgentClient } from "../core/agent-client";
 import { ActionDispatcher } from "../core/action-dispatcher";
+import { UiChoreographer } from "../core/ui-choreographer";
 import type {
   ActorRole,
   AgentAction,
+  ChoreographerState,
   NavigationAdapter,
   UiCard,
+  UiWorkflowPlan,
+  WorkflowExecutionMode,
 } from "../core/contracts";
+import { AgentStageOverlay } from "./agent-stage-overlay";
 
 export interface AgentWidgetProps {
   readonly apiBaseUrl: string;
@@ -19,6 +24,8 @@ export interface AgentWidgetProps {
   readonly brandTitle?: string;
   readonly quickPrompts?: readonly string[];
   readonly autoNavigate?: boolean;
+  readonly allowedTargetPatterns?: readonly string[];
+  readonly confirmOnlyTargetPatterns?: readonly string[];
 }
 
 interface ChatEntry {
@@ -27,6 +34,7 @@ interface ChatEntry {
   readonly text: string;
   readonly cards?: readonly UiCard[];
   readonly actions?: readonly AgentAction[];
+  readonly workflow?: UiWorkflowPlan;
   readonly isError?: boolean;
 }
 
@@ -45,12 +53,27 @@ export function AgentWidget({
   brandTitle = "Cố vấn Dịch vụ AI AUTORA",
   quickPrompts = DEFAULT_PROMPTS,
   autoNavigate = true,
+  allowedTargetPatterns,
+  confirmOnlyTargetPatterns = ["checkout.submit_booking"],
 }: AgentWidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [toolStatus, setToolStatus] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [executionMode, setExecutionMode] =
+    useState<WorkflowExecutionMode>("auto");
+  const [choreographerState, setChoreographerState] =
+    useState<ChoreographerState>({
+      status: "idle",
+      mode: "auto",
+      plan: null,
+      currentStepIndex: -1,
+      currentStep: null,
+      cursorPos: null,
+      spotlightRect: null,
+      isClicking: false,
+    });
   const [messages, setMessages] = useState<ChatEntry[]>([
     {
       id: "welcome",
@@ -62,6 +85,7 @@ export function AgentWidget({
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const clientRef = useRef<AgentClient | null>(null);
   const dispatcherRef = useRef<ActionDispatcher | null>(null);
+  const choreographerRef = useRef<UiChoreographer | null>(null);
 
   useEffect(() => {
     clientRef.current = new AgentClient({
@@ -71,7 +95,36 @@ export function AgentWidget({
       actorUserId,
     });
     dispatcherRef.current = new ActionDispatcher(navigationAdapter);
-  }, [apiBaseUrl, tenantId, actorRole, actorUserId, navigationAdapter]);
+    if (!choreographerRef.current) {
+      choreographerRef.current = new UiChoreographer({
+        adapter: navigationAdapter,
+        allowedTargetPatterns,
+        confirmOnlyTargetPatterns,
+        onStateChange: setChoreographerState,
+      });
+    } else {
+      choreographerRef.current.updateConfig({
+        adapter: navigationAdapter,
+        allowedTargetPatterns,
+        confirmOnlyTargetPatterns,
+        onStateChange: setChoreographerState,
+      });
+    }
+  }, [
+    apiBaseUrl,
+    tenantId,
+    actorRole,
+    actorUserId,
+    navigationAdapter,
+    allowedTargetPatterns,
+    confirmOnlyTargetPatterns,
+  ]);
+
+  useEffect(() => {
+    return () => {
+      choreographerRef.current?.stop();
+    };
+  }, []);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -107,6 +160,7 @@ export function AgentWidget({
         let streamedText = "";
         let streamedCards: readonly UiCard[] = [];
         let streamedActions: readonly AgentAction[] = [];
+        let streamedWorkflow: UiWorkflowPlan | null = null;
 
         setMessages((prev) => [
           ...prev,
@@ -119,6 +173,9 @@ export function AgentWidget({
           context: {
             ...context,
             capabilities: navigationAdapter.getCapabilities(),
+            uiCapabilities: navigationAdapter.getAllowedUiTargetPatterns?.()
+              ? [...navigationAdapter.getAllowedUiTargetPatterns!()]
+              : undefined,
           },
           onEvent: (evt) => {
             if (evt.type === "tool.status") {
@@ -146,7 +203,27 @@ export function AgentWidget({
                     : m
                 )
               );
-              if (autoNavigate && dispatcherRef.current) {
+            } else if (evt.type === "workflow.plan") {
+              streamedWorkflow = evt.plan;
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === assistantEntryId
+                    ? { ...m, workflow: evt.plan }
+                    : m
+                )
+              );
+            } else if (evt.type === "message.completed") {
+              if (streamedWorkflow && choreographerRef.current) {
+                setIsOpen(false);
+                void choreographerRef.current.run(
+                  streamedWorkflow,
+                  executionMode
+                );
+              } else if (
+                autoNavigate &&
+                streamedActions.length > 0 &&
+                dispatcherRef.current
+              ) {
                 const safeAutoAction = streamedActions.find(
                   (act) => !act.requiresConfirmation
                 );
@@ -177,7 +254,7 @@ export function AgentWidget({
         setToolStatus(null);
       }
     },
-    [isLoading, sessionId, navigationAdapter, autoNavigate]
+    [isLoading, sessionId, navigationAdapter, autoNavigate, executionMode]
   );
 
   // Listen for external trigger events from Homepage Advisor Bar
@@ -198,10 +275,31 @@ export function AgentWidget({
     await dispatcherRef.current.dispatch(action);
   };
 
+  const replayWorkflow = (
+    plan: UiWorkflowPlan,
+    mode: WorkflowExecutionMode
+  ) => {
+    setExecutionMode(mode);
+    setIsOpen(false);
+    void choreographerRef.current?.run(plan, mode);
+  };
+
   return (
     <>
+      <AgentStageOverlay
+        state={choreographerState}
+        onPause={() => choreographerRef.current?.pause()}
+        onResume={() => choreographerRef.current?.resume()}
+        onNextStep={() => choreographerRef.current?.nextStep()}
+        onModeChange={(mode) => {
+          setExecutionMode(mode);
+          choreographerRef.current?.setMode(mode);
+        }}
+        onStop={() => choreographerRef.current?.stop()}
+      />
+
       {/* Floating Launcher Button (Respects Mobile Bottom Dock) */}
-      {!isOpen && (
+      {!isOpen && choreographerState.status === "idle" && (
         <button
           type="button"
           onClick={() => setIsOpen(true)}
@@ -258,26 +356,52 @@ export function AgentWidget({
                 </span>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={() => setIsOpen(false)}
-              aria-label="Thu gọn trợ lý"
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-white/85 hover:bg-white/15 hover:text-white transition-colors cursor-pointer"
-            >
-              <svg
-                className="h-4 w-4"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
+            <div className="flex items-center gap-1.5">
+              <div className="flex items-center rounded-lg bg-white/15 p-0.5 text-[10px]">
+                <button
+                  type="button"
+                  onClick={() => setExecutionMode("auto")}
+                  className={`rounded-md px-2 py-0.5 font-semibold transition-colors cursor-pointer ${
+                    executionMode === "auto"
+                      ? "bg-white text-[#0056B3]"
+                      : "text-white/85 hover:text-white"
+                  }`}
+                >
+                  Tự chạy
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setExecutionMode("step")}
+                  className={`rounded-md px-2 py-0.5 font-semibold transition-colors cursor-pointer ${
+                    executionMode === "step"
+                      ? "bg-white text-[#0056B3]"
+                      : "text-white/85 hover:text-white"
+                  }`}
+                >
+                  Từng bước
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                aria-label="Thu gọn trợ lý"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-white/85 hover:bg-white/15 hover:text-white transition-colors cursor-pointer"
               >
-                <path d="M18 6 6 18" />
-                <path d="m6 6 12 12" />
-              </svg>
-            </button>
+                <svg
+                  className="h-4 w-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M18 6 6 18" />
+                  <path d="m6 6 12 12" />
+                </svg>
+              </button>
+            </div>
           </div>
 
           {/* Message Feed */}
@@ -343,6 +467,26 @@ export function AgentWidget({
                         )}
                       </div>
                     ))}
+                  </div>
+                )}
+
+                {/* Interactive Co-Browsing Replay Controls */}
+                {msg.workflow && (
+                  <div className="flex flex-wrap gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => replayWorkflow(msg.workflow!, "auto")}
+                      className="rounded-xl bg-[#0056B3] px-3 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-[#004494] transition-colors cursor-pointer"
+                    >
+                      ▶ Xem AI thao tác ({msg.workflow.steps.length} bước)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => replayWorkflow(msg.workflow!, "step")}
+                      className="rounded-xl border border-[#0056B3]/30 bg-white px-3 py-1.5 text-xs font-semibold text-[#0056B3] hover:bg-[#EBF4FF] transition-colors cursor-pointer"
+                    >
+                      Hướng dẫn từng bước
+                    </button>
                   </div>
                 )}
 

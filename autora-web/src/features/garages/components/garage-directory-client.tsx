@@ -42,6 +42,7 @@ export function GarageDirectoryClient() {
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-muted" />
                 <Input
                   id="dir-search"
+                  data-agent-target="garage.filter.search"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Quận 7, Cầu Giấy, Hải Châu..."
@@ -60,6 +61,7 @@ export function GarageDirectoryClient() {
                   <button
                     key={c.code}
                     type="button"
+                    data-agent-target={`garage.filter.city.${c.code}`}
                     onClick={() => setCity(c.code)}
                     className={cn(
                       "rounded-md px-3 py-2 text-left text-xs font-medium cursor-pointer transition-colors",
@@ -81,6 +83,7 @@ export function GarageDirectoryClient() {
               <div className="flex flex-col gap-1">
                 <button
                   type="button"
+                  data-agent-target="garage.filter.category.all"
                   onClick={() => setCategory("all")}
                   className={cn(
                     "rounded-md px-3 py-2 text-left text-xs font-medium cursor-pointer",
@@ -95,6 +98,7 @@ export function GarageDirectoryClient() {
                   <button
                     key={cat.id}
                     type="button"
+                    data-agent-target={`garage.filter.category.${cat.id}`}
                     onClick={() => setCategory(cat.id)}
                     className={cn(
                       "rounded-md px-3 py-2 text-left text-xs font-medium cursor-pointer",

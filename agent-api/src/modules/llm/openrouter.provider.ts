@@ -103,6 +103,7 @@ export class OpenRouterProvider implements ILlmProvider {
       cleanText,
       actions,
       toolCalls: extractedToolCalls,
+      workflow,
     } = extractActionsAndCleanText(msg?.content ?? "");
 
     return {
@@ -110,6 +111,7 @@ export class OpenRouterProvider implements ILlmProvider {
       text: cleanText,
       toolCalls: toolCalls.length > 0 ? toolCalls : extractedToolCalls,
       proposedActions: actions,
+      proposedWorkflow: workflow,
     };
   }
 }

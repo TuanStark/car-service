@@ -1,4 +1,9 @@
 import { Injectable } from "@nestjs/common";
+import {
+  buildBookingDraftWorkflow,
+  buildGarageSearchWorkflow,
+  buildServiceSearchWorkflow,
+} from "@/modules/runtime/workflow-synthesizer";
 import type {
   ILlmProvider,
   LlmTurnRequest,
@@ -66,16 +71,18 @@ export class LocalFallbackProvider implements ILlmProvider {
           slug: string;
           name: string;
           district: string;
+          cityCode?: string;
           startingPriceVnd: number;
           rating: number;
         };
         const formattedPrice = `${first.startingPriceVnd
           .toString()
           .replace(/\B(?=(\d{3})+(?!\d))/g, ".")}đ`;
+        const searchDistrict = first.district.split(",")[0]?.trim();
 
         return {
           provider: this.name,
-          text: `Tôi đã tìm thấy ${parsedData.length} garage uy tín phù hợp. Nổi bật nhất là **${first.name}** (${first.district}, đánh giá ${first.rating}/5.0, giá tham khảo từ ${formattedPrice}). Bạn có thể xem chi tiết xưởng hoặc chuyển tới trang lọc garage bên dưới.`,
+          text: `Tôi đã tìm thấy ${parsedData.length} garage uy tín phù hợp. Nổi bật nhất là **${first.name}** (${first.district}, đánh giá ${first.rating}/5.0, giá tham khảo từ ${formattedPrice}). Tôi sẽ thao tác từng bước trên giao diện để bạn xem chi tiết xưởng.`,
           toolCalls: [],
           proposedActions: [
             {
@@ -90,9 +97,15 @@ export class LocalFallbackProvider implements ILlmProvider {
               target: "garage.search",
               label: "Mở danh sách garage phù hợp",
               requiresConfirmation: false,
-              params: { q: first.district.split(",")[0] },
+              params: { q: searchDistrict },
             },
           ],
+          proposedWorkflow: buildGarageSearchWorkflow({
+            slug: first.slug,
+            name: first.name,
+            cityCode: first.cityCode,
+            district: searchDistrict,
+          }),
         };
       }
 
@@ -122,7 +135,7 @@ export class LocalFallbackProvider implements ILlmProvider {
 
         return {
           provider: this.name,
-          text: `Gói phù hợp nhất cho nhu cầu của bạn là **${first.name}** với giá tham khảo từ **${formattedPrice}**. Tôi có thể mở trang chi tiết gói hoặc điền sẵn bản nháp đặt lịch để bạn kiểm tra.`,
+          text: `Gói phù hợp nhất cho nhu cầu của bạn là **${first.name}** với giá tham khảo từ **${formattedPrice}**. Tôi sẽ thao tác tìm gói dịch vụ này trên cửa hàng để bạn theo dõi.`,
           toolCalls: [],
           proposedActions: [
             {
@@ -145,6 +158,11 @@ export class LocalFallbackProvider implements ILlmProvider {
               },
             },
           ],
+          proposedWorkflow: buildServiceSearchWorkflow({
+            slug: first.slug,
+            name: first.name,
+            searchQuery: first.name.split(" ").slice(0, 2).join(" "),
+          }),
         };
       }
 
@@ -159,7 +177,7 @@ export class LocalFallbackProvider implements ILlmProvider {
         };
         return {
           provider: this.name,
-          text: `Tôi đã chuẩn bị sẵn bản nháp đặt lịch **${draft.serviceName}** tại **${draft.garageName}** vào lúc **${draft.preferredTime} ngày ${draft.preferredDate}**. Vui lòng kiểm tra lại thông tin và tự bấm xác nhận ở bước tiếp theo.`,
+          text: `Tôi đã chuẩn bị sẵn bản nháp đặt lịch **${draft.serviceName}** tại **${draft.garageName}** vào lúc **${draft.preferredTime} ngày ${draft.preferredDate}**. Tôi sẽ điền lần lượt từng trường trên màn hình và dừng trước nút xác nhận để bạn tự kiểm tra.`,
           toolCalls: [],
           proposedActions: [
             {
@@ -175,6 +193,14 @@ export class LocalFallbackProvider implements ILlmProvider {
               },
             },
           ],
+          proposedWorkflow: buildBookingDraftWorkflow({
+            garageId: draft.garageId,
+            garageName: draft.garageName,
+            serviceSlug: draft.serviceSlug,
+            serviceName: draft.serviceName,
+            preferredDate: draft.preferredDate,
+            preferredTime: draft.preferredTime,
+          }),
         };
       }
 

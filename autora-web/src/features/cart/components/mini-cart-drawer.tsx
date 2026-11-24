@@ -198,7 +198,10 @@ export function MiniCartDrawer() {
                   asChild
                   onClick={() => setMiniCartOpen(false)}
                 >
-                  <Link href={ROUTES.CHECKOUT}>
+                  <Link
+                    href={ROUTES.CHECKOUT}
+                    data-agent-target="nav.checkout"
+                  >
                     ĐẶT LỊCH NGAY
                     <ArrowRight className="h-4 w-4" />
                   </Link>

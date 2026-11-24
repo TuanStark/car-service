@@ -87,6 +87,7 @@ export function GarageStoreCard({ garage }: { readonly garage: GarageEntity }) {
 
           <Link
             href={ROUTES.GARAGE_DETAIL(garage.slug)}
+            data-agent-target={`garage.card.${garage.slug}`}
             className="inline-flex items-center gap-1.5 rounded-md bg-brand px-3.5 py-2 font-display text-xs font-bold uppercase tracking-wider text-ink-inverse transition-colors hover:bg-brand-hover"
           >
             XEM CỬA HÀNG XƯỞNG

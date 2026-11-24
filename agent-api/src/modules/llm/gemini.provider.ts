@@ -102,6 +102,7 @@ export class GeminiApiProvider implements ILlmProvider {
       cleanText,
       actions,
       toolCalls: extractedToolCalls,
+      workflow,
     } = extractActionsAndCleanText(textParts.join("\n"));
 
     return {
@@ -109,6 +110,7 @@ export class GeminiApiProvider implements ILlmProvider {
       text: cleanText,
       toolCalls: toolCalls.length > 0 ? toolCalls : extractedToolCalls,
       proposedActions: actions,
+      proposedWorkflow: workflow,
     };
   }
 }

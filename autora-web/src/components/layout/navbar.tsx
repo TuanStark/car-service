@@ -117,6 +117,7 @@ export function Navbar() {
         <div className="flex items-center gap-2 sm:gap-2.5">
           <Link
             href={ROUTES.SERVICES}
+            data-agent-target="nav.services"
             className="hidden md:inline-flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-xs font-semibold text-white shadow-xs hover:bg-brand-hover transition-colors"
           >
             <Wrench className="h-3.5 w-3.5" />
@@ -125,6 +126,7 @@ export function Navbar() {
 
           <Link
             href={ROUTES.GARAGES}
+            data-agent-target="nav.garages"
             className={cn(
               "hidden sm:inline-flex h-9 items-center gap-1.5 rounded-lg px-3.5 text-xs font-semibold transition-colors",
               isTransparent
@@ -166,6 +168,7 @@ export function Navbar() {
           <button
             type="button"
             onClick={() => setMiniCartOpen(true)}
+            data-agent-target="nav.cart"
             aria-label="Giỏ dịch vụ"
             className={cn(
               "relative flex h-9 w-9 items-center justify-center rounded-md transition-colors cursor-pointer",

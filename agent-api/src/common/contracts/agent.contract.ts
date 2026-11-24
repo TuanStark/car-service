@@ -18,6 +18,7 @@ export const PageContextSchema = z
   .object({
     current_page: z.string().max(200).default("/"),
     capabilities: z.array(z.string().max(80)).max(30).optional(),
+    uiCapabilities: z.array(z.string().max(120)).max(60).optional(),
     vehicle: z
       .object({
         brand: z.string().max(60).optional(),
@@ -96,6 +97,52 @@ export interface SiteNavigationEntry {
   readonly requiresConfirmation?: boolean;
 }
 
+export const UiTargetRiskSchema = z.enum(["safe", "confirm_only"]);
+export type UiTargetRisk = z.infer<typeof UiTargetRiskSchema>;
+
+export const UiTargetInteractionSchema = z.enum([
+  "click",
+  "type",
+  "select",
+  "focus",
+]);
+export type UiTargetInteraction = z.infer<typeof UiTargetInteractionSchema>;
+
+export interface UiTargetDeclaration {
+  readonly targetPattern: string;
+  readonly route: string;
+  readonly interactions: readonly UiTargetInteraction[];
+  readonly risk: UiTargetRisk;
+  readonly description: string;
+}
+
+export const UiWorkflowStepActionSchema = z.enum([
+  "click",
+  "type",
+  "select",
+  "highlight",
+  "wait_route",
+  "handoff_confirm",
+]);
+export type UiWorkflowStepAction = z.infer<typeof UiWorkflowStepActionSchema>;
+
+export const UiWorkflowStepSchema = z.object({
+  id: z.string().min(1).max(64),
+  action: UiWorkflowStepActionSchema,
+  targetId: z.string().regex(/^[a-zA-Z0-9._:-]+$/).max(120),
+  value: z.string().max(300).optional(),
+  narration: z.string().min(1).max(240),
+  fallbackRoute: z.string().max(200).optional(),
+  delayMs: z.number().int().min(100).max(5000).optional(),
+});
+export type UiWorkflowStep = z.infer<typeof UiWorkflowStepSchema>;
+
+export const UiWorkflowPlanSchema = z.object({
+  title: z.string().min(1).max(140),
+  steps: z.array(UiWorkflowStepSchema).min(1).max(12),
+});
+export type UiWorkflowPlan = z.infer<typeof UiWorkflowPlanSchema>;
+
 export interface SiteManifest {
   readonly tenantId: string;
   readonly brandName: string;
@@ -105,6 +152,7 @@ export interface SiteManifest {
   readonly allowedOrigins: readonly string[];
   readonly tools: readonly SiteToolDeclaration[];
   readonly navigationContract: readonly SiteNavigationEntry[];
+  readonly uiTargets?: readonly UiTargetDeclaration[];
 }
 
 export type SseEventPayload =
@@ -113,6 +161,7 @@ export type SseEventPayload =
   | { type: "message.delta"; delta: string }
   | { type: "ui.cards"; cards: readonly UiCard[] }
   | { type: "action.proposed"; actions: readonly AgentAction[] }
+  | { type: "workflow.plan"; plan: UiWorkflowPlan }
   | {
       type: "message.completed";
       messageId: string;
