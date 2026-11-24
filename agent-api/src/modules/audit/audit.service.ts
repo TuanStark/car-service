@@ -1,5 +1,6 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger, type OnModuleInit } from "@nestjs/common";
 import type { ActorRole } from "@/common/contracts/agent.contract";
+import { PrismaService } from "@/common/prisma/prisma.service";
 
 export interface AuditEventInput {
   readonly tenantId: string;
@@ -28,10 +29,16 @@ export interface AuditRecord extends AuditEventInput {
 }
 
 @Injectable()
-export class AuditService {
+export class AuditService implements OnModuleInit {
   private readonly logger = new Logger(AuditService.name);
   private readonly records: AuditRecord[] = [];
   private seq = 1;
+
+  constructor(private readonly prisma?: PrismaService) {}
+
+  onModuleInit(): void {
+    // Ready
+  }
 
   record(event: AuditEventInput): AuditRecord {
     const entry: AuditRecord = {
@@ -43,6 +50,28 @@ export class AuditService {
     this.records.push(entry);
     if (this.records.length > 2000) {
       this.records.shift();
+    }
+
+    if (this.prisma?.isConnected) {
+      void this.prisma.auditLog
+        .create({
+          data: {
+            tenantId: event.tenantId,
+            sessionId: event.sessionId,
+            actorRole: event.actorRole,
+            actorUserId: event.actorUserId,
+            eventType: event.eventType,
+            toolName: event.toolName,
+            actionTarget: event.actionTarget,
+            allowed: event.allowed,
+            reason: event.reason,
+            latencyMs: event.latencyMs,
+            provider: event.provider,
+          },
+        })
+        .catch(() => {
+          // Do not break request flow if audit write fails
+        });
     }
 
     const logPayload = {
@@ -76,4 +105,3 @@ export class AuditService {
     return this.records.slice(-limit);
   }
 }
-

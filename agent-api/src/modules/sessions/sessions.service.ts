@@ -8,6 +8,7 @@ import type {
   TrustedActorContext,
   UiCard,
 } from "@/common/contracts/agent.contract";
+import { PrismaService } from "@/common/prisma/prisma.service";
 import { AuditService } from "@/modules/audit/audit.service";
 import { TenantRegistryService } from "@/modules/tenants/tenant-registry.service";
 
@@ -38,7 +39,8 @@ export class SessionsService {
 
   constructor(
     private readonly tenantRegistry: TenantRegistryService,
-    private readonly auditService: AuditService
+    private readonly auditService: AuditService,
+    private readonly prisma?: PrismaService
   ) {}
 
   createSession(input: {
@@ -47,11 +49,9 @@ export class SessionsService {
     actorUserId?: string;
     metadata?: Record<string, string>;
   }): SessionRecord {
-    // Validate tenant exists
     this.tenantRegistry.getManifest(input.tenantId);
 
     const role: ActorRole = input.actorRole ?? "guest";
-    // Prevent impersonation: customer role without userId downgrades safely to guest
     const effectiveRole: ActorRole =
       role === "customer" && !input.actorUserId ? "guest" : role;
 
@@ -74,6 +74,23 @@ export class SessionsService {
 
     this.sessions.set(id, record);
     this.streams.set(id, new Subject<SseEventPayload>());
+
+    if (this.prisma?.isConnected) {
+      void this.prisma.agentSession
+        .create({
+          data: {
+            id,
+            tenantId: record.actor.tenantId,
+            actorRole: record.actor.role,
+            actorUserId: record.actor.userId,
+            metadataJson: record.metadata ?? {},
+            expiresAt: expires,
+          },
+        })
+        .catch(() => {
+          // Keep in-memory session working if DB insert fails
+        });
+    }
 
     this.auditService.record({
       tenantId: record.actor.tenantId,
@@ -98,6 +115,27 @@ export class SessionsService {
   appendMessage(sessionId: string, msg: StoredMessage): void {
     const session = this.getSession(sessionId);
     session.messages.push(msg);
+
+    if (this.prisma?.isConnected) {
+      void this.prisma.agentMessage
+        .create({
+          data: {
+            id: msg.id,
+            sessionId,
+            role: msg.role,
+            content: msg.content,
+            cardsJson: msg.cards ? (msg.cards as unknown as object) : undefined,
+            actionsJson: msg.actions
+              ? (msg.actions as unknown as object)
+              : undefined,
+            provider: msg.provider,
+            latencyMs: msg.latencyMs,
+          },
+        })
+        .catch(() => {
+          // Ignore transient DB write failure
+        });
+    }
   }
 
   emitEvent(sessionId: string, payload: SseEventPayload): void {
@@ -117,4 +155,3 @@ export class SessionsService {
     return subject.asObservable();
   }
 }
-

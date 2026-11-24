@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { PrismaService } from "./common/prisma/prisma.service";
 import { AuditService } from "./modules/audit/audit.service";
 import { TenantRegistryService } from "./modules/tenants/tenant-registry.service";
 import { RbacService } from "./modules/rbac/rbac.service";
@@ -19,6 +20,7 @@ import { RateLimitGuard } from "./common/guards/rate-limit.guard";
 @Module({
   controllers: [SessionsController, HealthController],
   providers: [
+    PrismaService,
     AuditService,
     TenantRegistryService,
     RbacService,
