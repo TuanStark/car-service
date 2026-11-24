@@ -59,6 +59,7 @@ export default function CheckoutPage() {
     discountVnd,
     totalVnd,
     activeVehicle,
+    bookingDraft,
     addToCart,
     placeOrder,
   } = useStore();
@@ -66,10 +67,14 @@ export default function CheckoutPage() {
   const garages = garageService.getAllGarages();
 
   const [selectedGarageId, setSelectedGarageId] = useState(
-    cart[0]?.selectedGarageId ?? garages[0].id
+    bookingDraft?.garageId ?? cart[0]?.selectedGarageId ?? garages[0].id
   );
-  const [dateIso, setDateIso] = useState("2026-11-24");
-  const [timeSlot, setTimeSlot] = useState("09:30");
+  const [dateIso, setDateIso] = useState(
+    bookingDraft?.preferredDate ?? "2026-11-24"
+  );
+  const [timeSlot, setTimeSlot] = useState(
+    bookingDraft?.preferredTime ?? "09:30"
+  );
   const [customerName, setCustomerName] = useState("Nguyễn Minh Khoa");
   const [customerPhone, setCustomerPhone] = useState("0909 688 912");
   const [vehicleLabel, setVehicleLabel] = useState(
@@ -78,7 +83,7 @@ export default function CheckoutPage() {
   const [licensePlate, setLicensePlate] = useState(activeVehicle.licensePlate);
   const [odoKm, setOdoKm] = useState(activeVehicle.currentOdoKm);
   const [paymentId, setPaymentId] = useState<string>(PAYMENT_METHODS[0].id);
-  const [notes, setNotes] = useState("");
+  const [notes, setNotes] = useState(bookingDraft?.notes ?? "");
   const [completedOrder, setCompletedOrder] = useState<ServiceOrder | null>(
     null
   );
@@ -204,6 +209,12 @@ export default function CheckoutPage() {
         <h1 className="font-display text-4xl font-extrabold uppercase text-ink border-b border-line pb-4">
           XÁC NHẬN ĐẶT LỊCH & THÔNG TIN XE
         </h1>
+
+        {bookingDraft && (
+          <div className="mt-5 rounded-xl border border-brand/30 bg-brand-soft px-4 py-3 text-xs sm:text-sm font-medium text-ink">
+            <strong>Bản nháp từ Cố vấn AI:</strong> Thông tin garage, dịch vụ và khung giờ hẹn đã được điền sẵn. Vui lòng kiểm tra kỹ trước khi bấm xác nhận.
+          </div>
+        )}
 
         {cart.length === 0 ? (
           <div className="mt-8 rounded-xl border border-line bg-surface p-10 text-center shadow-xs space-y-4">

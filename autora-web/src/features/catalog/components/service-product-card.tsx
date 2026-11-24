@@ -26,7 +26,7 @@ export function ServiceProductCard({ product }: ServiceProductCardProps) {
   const wished = isInWishlist(product.id);
 
   return (
-    <article className="group relative flex flex-col overflow-hidden rounded-lg border border-line bg-surface shadow-xs transition-all duration-200 hover:border-brand/50 hover:shadow-md">
+    <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-lg">
       {/* Product Image Thumbnail */}
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-surface-subtle">
         <Link
@@ -127,15 +127,15 @@ export function ServiceProductCard({ product }: ServiceProductCardProps) {
           <div className="flex items-baseline justify-between gap-2">
             <div>
               {product.originalPriceVnd && (
-                <span className="mr-2 text-xs text-ink-muted line-through">
+                <span className="mr-2 text-xs text-ink-muted line-through tabular-nums">
                   {formatVND(product.originalPriceVnd)}
                 </span>
               )}
-              <strong className="font-display text-2xl font-extrabold tracking-wide text-brand">
+              <strong className="font-sans text-lg sm:text-xl font-bold tracking-tight text-brand tabular-nums">
                 {formatVND(product.priceVnd)}
               </strong>
             </div>
-            <span className="text-[10px] text-ink-muted">Giá tham khảo</span>
+            <span className="text-[11px] text-ink-muted">Giá tham khảo</span>
           </div>
 
           <p className="mt-1 flex items-center gap-1 text-[11px] text-ink-secondary">
@@ -146,10 +146,10 @@ export function ServiceProductCard({ product }: ServiceProductCardProps) {
           <button
             type="button"
             onClick={() => addToCart(product, 1)}
-            className="mt-3.5 flex h-10 w-full items-center justify-center gap-2 rounded-md bg-brand-soft border border-brand/20 font-display text-xs sm:text-sm font-bold uppercase tracking-wider text-brand transition-all hover:bg-brand hover:border-brand hover:text-ink-inverse cursor-pointer"
+            className="mt-3.5 flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-brand-soft border border-brand/20 font-sans text-xs sm:text-sm font-semibold text-brand transition-all hover:bg-brand hover:border-brand hover:text-ink-inverse cursor-pointer"
           >
             <ShoppingBag className="h-3.5 w-3.5" />
-            THÊM VÀO GIỎ DỊCH VỤ
+            Thêm vào giỏ dịch vụ
           </button>
         </div>
       </div>

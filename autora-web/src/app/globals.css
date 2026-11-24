@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@source "../../../agent-sdk/src/react/agent-widget.tsx";
 
 :root {
   /* Clean Bright Automotive E-Commerce Palette */

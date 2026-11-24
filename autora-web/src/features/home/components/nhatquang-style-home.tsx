@@ -8,8 +8,8 @@ import {
   ArrowRight,
   Calendar,
   Car,
+  ChevronDown,
   Wrench,
-  MessageCircle,
 } from "lucide-react";
 import { ROUTES } from "@/config/routes.config";
 import { Button } from "@/components/ui/button";
@@ -82,7 +82,6 @@ const FOUR_PILLARS = [
 
 export function NhatQuangStyleHome({
   products,
-  garages,
   articles,
 }: NhatQuangStyleHomeProps) {
   const router = useRouter();
@@ -154,115 +153,117 @@ export function NhatQuangStyleHome({
         {/* Subtle Top & Bottom Gradient so Transparent Header & Bottom Bar stay crisp */}
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/45 via-transparent to-black/50" />
 
-        {/* Bottom Floating Yellow + Cobalt Pill Search Bar (Responsive 320px -> Foldable -> Desktop) */}
-        <div className="absolute inset-x-0 bottom-20 sm:bottom-8 z-20 px-safe">
+        {/* Bottom Floating Search Bar (Responsive 320px -> Foldable -> Desktop) */}
+        <div className="absolute inset-x-0 bottom-24 sm:bottom-8 z-20 px-safe">
           <form
             onSubmit={handleFinderGo}
-            className="mx-auto flex w-full max-w-xl flex-col sm:flex-row items-stretch sm:items-center gap-2"
+            className="mx-auto flex w-full max-w-2xl flex-col sm:flex-row items-stretch sm:items-center gap-2 rounded-2xl border border-white/20 bg-slate-950/75 p-2 shadow-2xl backdrop-blur-md"
           >
-            {/* Left Yellow Mode Switcher Pill */}
-            <div className="flex h-12 shrink-0 items-center rounded-md bg-[#FFE600] p-1 shadow-lg">
+            {/* Left Mode Switcher */}
+            <div className="flex h-11 shrink-0 items-center rounded-xl bg-white/10 p-1">
               <button
                 type="button"
                 onClick={() => setFinderMode("car")}
                 className={cn(
-                  "flex h-10 items-center gap-1.5 rounded px-3 text-xs font-extrabold transition-colors cursor-pointer",
+                  "flex h-9 flex-1 sm:flex-initial items-center justify-center gap-1.5 rounded-lg px-3.5 text-xs font-semibold transition-all cursor-pointer",
                   finderMode === "car"
-                    ? "bg-black/10 text-slate-950"
-                    : "text-slate-900/70 hover:text-slate-950"
+                    ? "bg-white text-slate-950 shadow-xs"
+                    : "text-white/80 hover:text-white"
                 )}
               >
-                <Car className="h-4 w-4" />
+                <Car className="h-3.5 w-3.5" />
                 <span>Xe ô tô</span>
               </button>
               <button
                 type="button"
                 onClick={() => setFinderMode("garage")}
                 className={cn(
-                  "flex h-10 items-center gap-1.5 rounded px-2.5 text-xs font-extrabold transition-colors cursor-pointer",
+                  "flex h-9 flex-1 sm:flex-initial items-center justify-center gap-1.5 rounded-lg px-3.5 text-xs font-semibold transition-all cursor-pointer",
                   finderMode === "garage"
-                    ? "bg-black/10 text-slate-950"
-                    : "text-slate-900/70 hover:text-slate-950"
+                    ? "bg-white text-slate-950 shadow-xs"
+                    : "text-white/80 hover:text-white"
                 )}
               >
                 <Wrench className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Gara</span>
+                <span>Gara</span>
               </button>
             </div>
 
-            {/* Right Cobalt Blue Selector + Arrow Button */}
-            <div className="flex h-12 flex-1 items-center justify-between gap-2 rounded-md bg-[#0047AB] px-3 text-white shadow-lg">
-              {finderMode === "car" ? (
-                <select
-                  aria-label="Tìm dịch vụ theo dòng xe"
-                  value={selectedBrand}
-                  onChange={(e) => setSelectedBrand(e.target.value)}
-                  className="h-full flex-1 bg-transparent text-xs sm:text-sm font-semibold text-white focus:outline-none cursor-pointer"
-                >
-                  <option value="all" className="text-ink">
-                    Tìm dịch vụ theo dòng xe
-                  </option>
-                  {CAR_BRANDS.map((b) => (
-                    <option key={b} value={b} className="text-ink">
-                      Dòng xe: {b}
+            {/* Right Selector + Search CTA */}
+            <div className="flex h-11 flex-1 items-center gap-2 rounded-xl bg-white/10 pl-3.5 pr-1.5 text-white">
+              <div className="relative flex flex-1 items-center">
+                {finderMode === "car" ? (
+                  <select
+                    aria-label="Tìm dịch vụ theo dòng xe"
+                    value={selectedBrand}
+                    onChange={(e) => setSelectedBrand(e.target.value)}
+                    className="h-11 w-full appearance-none bg-transparent pr-7 text-xs sm:text-sm font-medium text-white focus:outline-none cursor-pointer"
+                  >
+                    <option value="all" className="text-ink">
+                      Tìm dịch vụ theo dòng xe
                     </option>
-                  ))}
-                </select>
-              ) : (
-                <select
-                  aria-label="Tìm gara theo khu vực"
-                  value={selectedCity}
-                  onChange={(e) => setSelectedCity(e.target.value)}
-                  className="h-full flex-1 bg-transparent text-xs sm:text-sm font-semibold text-white focus:outline-none cursor-pointer"
-                >
-                  <option value="all" className="text-ink">
-                    Tìm gara uy tín gần bạn
-                  </option>
-                  <option value="hcm" className="text-ink">
-                    TP. Hồ Chí Minh
-                  </option>
-                  <option value="hn" className="text-ink">
-                    Hà Nội
-                  </option>
-                  <option value="dn" className="text-ink">
-                    Đà Nẵng
-                  </option>
-                </select>
-              )}
+                    {CAR_BRANDS.map((b) => (
+                      <option key={b} value={b} className="text-ink">
+                        Dòng xe: {b}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <select
+                    aria-label="Tìm gara theo khu vực"
+                    value={selectedCity}
+                    onChange={(e) => setSelectedCity(e.target.value)}
+                    className="h-11 w-full appearance-none bg-transparent pr-7 text-xs sm:text-sm font-medium text-white focus:outline-none cursor-pointer"
+                  >
+                    <option value="all" className="text-ink">
+                      Tìm gara uy tín gần bạn
+                    </option>
+                    <option value="hcm" className="text-ink">
+                      TP. Hồ Chí Minh
+                    </option>
+                    <option value="hn" className="text-ink">
+                      Hà Nội
+                    </option>
+                    <option value="dn" className="text-ink">
+                      Đà Nẵng
+                    </option>
+                  </select>
+                )}
+                <ChevronDown className="pointer-events-none absolute right-1 h-4 w-4 text-white/70" />
+              </div>
 
               <button
                 type="submit"
                 aria-label="Tìm kiếm ngay"
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-[#2563EB] text-white hover:bg-[#3B82F6] transition-colors cursor-pointer"
+                className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-xs font-semibold text-white shadow-xs hover:bg-brand-hover transition-colors cursor-pointer"
               >
-                <ArrowRight className="h-4 w-4" />
+                <span>Tìm kiếm</span>
+                <ArrowRight className="h-3.5 w-3.5" />
               </button>
             </div>
           </form>
         </div>
-
-        {/* Bottom-Right Floating Contact Pill ("Liên hệ") */}
-        <Link
-          href={ROUTES.CONTACT}
-          className="absolute bottom-6 right-5 z-20 hidden sm:inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-xs font-bold text-ink shadow-lg hover:bg-surface-subtle transition-colors"
-        >
-          <MessageCircle className="h-3.5 w-3.5 text-brand" />
-          <span>Liên hệ</span>
-        </Link>
       </section>
 
       {/* SEC 1: Những thương hiệu của chúng tôi (3 Brand Cards) */}
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <h2 className="font-display text-3xl sm:text-4xl font-extrabold uppercase text-ink mb-8">
-          Những thương hiệu của chúng tôi
-        </h2>
+      <section className="mx-auto max-w-7xl px-4 py-14 sm:py-16 sm:px-6 lg:px-8">
+        <div className="mb-8 flex flex-col gap-1.5 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <span className="text-xs font-semibold uppercase tracking-wider text-brand">
+              Đối tác chính hãng
+            </span>
+            <h2 className="mt-1 font-sans text-2xl sm:text-3xl font-bold tracking-tight text-ink">
+              Những thương hiệu của chúng tôi
+            </h2>
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           {BRAND_BANNERS.map((b) => (
             <Link
               key={b.name}
               href={b.href}
-              className="group relative h-72 overflow-hidden rounded-xl border border-line bg-slate-900 shadow-xs"
+              className="group relative h-72 overflow-hidden rounded-2xl border border-line bg-slate-900 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
             >
               <Image
                 src={b.image}
@@ -272,15 +273,15 @@ export function NhatQuangStyleHome({
                 sizes="(max-width: 768px) 100vw, 33vw"
                 className="object-cover transition-transform duration-500 group-hover:scale-105"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/30 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/35 to-transparent" />
               <div className="absolute inset-x-6 bottom-6 text-white">
                 <span className="text-xs font-medium text-slate-200 block">
                   {b.tag}
                 </span>
-                <h3 className="mt-1 font-display text-2xl font-extrabold uppercase">
+                <h3 className="mt-1 font-sans text-xl font-bold tracking-tight">
                   {b.name}
                 </h3>
-                <span className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-amber-300 group-hover:translate-x-1 transition-transform">
+                <span className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-amber-300 group-hover:translate-x-1 transition-transform">
                   Khám phá <ArrowRight className="h-3.5 w-3.5" />
                 </span>
               </div>
@@ -290,12 +291,17 @@ export function NhatQuangStyleHome({
       </section>
 
       {/* SEC 2: Sản phẩm nổi bật (3 Tabs + Subtitle + 4-Col Grid) */}
-      <section className="border-t border-line bg-canvas py-16">
+      <section className="border-t border-line bg-canvas py-14 sm:py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between border-b border-line pb-4">
-            <h2 className="font-display text-3xl sm:text-4xl font-extrabold uppercase text-ink">
-              Sản phẩm nổi bật
-            </h2>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between border-b border-line pb-5">
+            <div>
+              <span className="text-xs font-semibold uppercase tracking-wider text-brand">
+                Dịch vụ tiêu chuẩn
+              </span>
+              <h2 className="mt-1 font-sans text-2xl sm:text-3xl font-bold tracking-tight text-ink">
+                Sản phẩm nổi bật
+              </h2>
+            </div>
 
             <div className="flex flex-wrap gap-2">
               {[
@@ -312,10 +318,10 @@ export function NhatQuangStyleHome({
                     )
                   }
                   className={cn(
-                    "rounded-lg px-4 py-2 text-xs sm:text-sm font-bold transition-colors cursor-pointer border",
+                    "rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition-colors cursor-pointer border",
                     activeCollection === t.id
-                      ? "bg-brand text-white border-brand"
-                      : "bg-surface text-ink-secondary border-line hover:text-ink"
+                      ? "bg-brand text-white border-brand shadow-xs"
+                      : "bg-surface text-ink-secondary border-line hover:border-brand/40 hover:text-ink"
                   )}
                 >
                   {t.label}
@@ -324,7 +330,7 @@ export function NhatQuangStyleHome({
             </div>
           </div>
 
-          <h3 className="mt-6 font-display text-xl font-bold uppercase text-ink-secondary">
+          <h3 className="mt-6 font-sans text-base sm:text-lg font-semibold text-ink-secondary">
             {collectionSubtitle}
           </h3>
 
@@ -363,14 +369,17 @@ export function NhatQuangStyleHome({
       </section>
 
       {/* SEC 4: 01 Niềm tin • 02 An toàn • 03 Giá trị • 04 Chuyên nghiệp */}
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="mx-auto max-w-7xl px-4 py-14 sm:py-16 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {FOUR_PILLARS.map((p) => (
-            <div key={p.num} className="border-t-2 border-brand pt-5 space-y-2.5">
-              <span className="font-mono text-sm font-extrabold text-brand">
+            <div
+              key={p.num}
+              className="rounded-2xl border border-line bg-surface p-6 shadow-xs transition-shadow hover:shadow-md space-y-2.5"
+            >
+              <span className="inline-flex h-7 items-center rounded-md bg-brand-soft px-2.5 font-mono text-xs font-bold text-brand">
                 {p.num}
               </span>
-              <h2 className="font-display text-3xl font-extrabold uppercase text-ink">
+              <h2 className="font-sans text-xl font-bold tracking-tight text-ink">
                 {p.title}
               </h2>
               <p className="text-sm leading-relaxed text-ink-secondary">
@@ -382,25 +391,28 @@ export function NhatQuangStyleHome({
       </section>
 
       {/* SEC 5: Tại sao là AUTORA Car Service? */}
-      <section className="border-y border-line bg-canvas py-16">
+      <section className="border-y border-line bg-canvas py-14 sm:py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:items-center fold-dual-grid">
             <div className="lg:col-span-6 space-y-5">
-              <h2 className="font-display text-4xl sm:text-5xl font-extrabold uppercase leading-tight text-ink">
+              <span className="text-xs font-semibold uppercase tracking-wider text-brand">
+                Nền tảng chăm sóc xe số 1
+              </span>
+              <h2 className="font-sans text-3xl sm:text-4xl font-bold tracking-tight leading-tight text-ink">
                 Tại sao là AUTORA Car Service?
               </h2>
               <p className="text-base leading-relaxed text-ink-secondary">
-                AUTORA sẽ phát triển thành nền tảng dịch vụ bảo dưỡng, lốp xe và dầu nhớt hàng đầu tại Việt Nam với sự đổi mới không ngừng — giúp mọi chủ xe tìm gara uy tín, xem giá VNĐ minh bạch và đặt lịch dễ dàng.
+                AUTORA phát triển thành nền tảng dịch vụ bảo dưỡng, lốp xe và dầu nhớt hàng đầu tại Việt Nam với sự đổi mới không ngừng — giúp mọi chủ xe tìm gara uy tín, xem giá VNĐ minh bạch và đặt lịch dễ dàng.
               </p>
               <Button variant="primary" size="lg" asChild>
                 <Link href={ROUTES.GARAGES}>
-                  Khám phá <ArrowRight className="h-4 w-4" />
+                  Khám phá hệ thống gara <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
             </div>
 
             <div className="lg:col-span-6">
-              <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl border border-line bg-surface shadow-sm">
+              <div className="relative aspect-[16/10] w-full overflow-hidden rounded-2xl border border-line bg-surface shadow-sm">
                 <Image
                   src="/images/garage-card-alt.jpg"
                   alt="Tại sao chọn AUTORA Car Service"
@@ -416,13 +428,18 @@ export function NhatQuangStyleHome({
       </section>
 
       {/* SEC 6: Blog chia sẻ */}
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="font-display text-3xl sm:text-4xl font-extrabold uppercase text-ink">
-            Blog chia sẻ
-          </h2>
+      <section className="mx-auto max-w-7xl px-4 py-14 sm:py-16 sm:px-6 lg:px-8">
+        <div className="flex items-end justify-between mb-8">
+          <div>
+            <span className="text-xs font-semibold uppercase tracking-wider text-brand">
+              Cẩm nang chủ xe
+            </span>
+            <h2 className="mt-1 font-sans text-2xl sm:text-3xl font-bold tracking-tight text-ink">
+              Blog chia sẻ
+            </h2>
+          </div>
           <Button variant="outline" size="sm" asChild>
-            <Link href={ROUTES.BLOG}>Tất cả</Link>
+            <Link href={ROUTES.BLOG}>Xem tất cả</Link>
           </Button>
         </div>
 
@@ -430,7 +447,7 @@ export function NhatQuangStyleHome({
           {articles.map((art) => (
             <article
               key={art.id}
-              className="group relative h-80 overflow-hidden rounded-xl border border-line bg-slate-900 shadow-xs"
+              className="group relative h-80 overflow-hidden rounded-2xl border border-line bg-slate-900 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
             >
               <Image
                 src={art.coverImage}
@@ -446,14 +463,14 @@ export function NhatQuangStyleHome({
                   <Calendar className="h-3.5 w-3.5" />
                   {art.publishedDate}
                 </span>
-                <h3 className="font-display text-xl font-bold uppercase leading-snug group-hover:text-amber-300 transition-colors">
+                <h3 className="font-sans text-lg font-bold leading-snug group-hover:text-amber-300 transition-colors line-clamp-2">
                   <Link href={ROUTES.BLOG_DETAIL(art.slug)}>{art.title}</Link>
                 </h3>
                 <Link
                   href={ROUTES.BLOG_DETAIL(art.slug)}
-                  className="inline-flex items-center gap-1 text-xs font-bold uppercase text-amber-300"
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-amber-300"
                 >
-                  Khám phá <ArrowRight className="h-3.5 w-3.5" />
+                  Đọc thêm <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
               </div>
             </article>

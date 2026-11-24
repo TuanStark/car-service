@@ -56,6 +56,15 @@ export interface ServiceOrder {
   readonly notes?: string;
 }
 
+export interface BookingDraftPrefill {
+  readonly garageId?: string;
+  readonly serviceSlug?: string;
+  readonly preferredDate?: string;
+  readonly preferredTime?: string;
+  readonly vehicleLabel?: string;
+  readonly notes?: string;
+}
+
 interface StoreContextValue {
   readonly cart: readonly CartItem[];
   readonly cartCount: number;
@@ -68,6 +77,7 @@ interface StoreContextValue {
   readonly quickViewProduct: ServiceProduct | null;
   readonly activeVehicle: CustomerVehicle;
   readonly orders: readonly ServiceOrder[];
+  readonly bookingDraft: BookingDraftPrefill | null;
   readonly toastMessage: string | null;
   readonly addToCart: (
     product: ServiceProduct,
@@ -86,6 +96,7 @@ interface StoreContextValue {
   readonly openQuickView: (product: ServiceProduct) => void;
   readonly closeQuickView: () => void;
   readonly setActiveVehicle: (vehicle: CustomerVehicle) => void;
+  readonly setBookingDraft: (draft: BookingDraftPrefill | null) => void;
   readonly placeOrder: (
     draft: Omit<
       ServiceOrder,
@@ -182,6 +193,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     useState<CustomerVehicle>(DEFAULT_VEHICLE);
   const [orders, setOrders] =
     useState<readonly ServiceOrder[]>(INITIAL_DEMO_ORDERS);
+  const [bookingDraft, setBookingDraft] =
+    useState<BookingDraftPrefill | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [storageReady, setStorageReady] = useState(false);
 
@@ -403,6 +416,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setOrders((prev) => [newOrder, ...prev]);
       setCart([]);
       setCouponCode(null);
+      setBookingDraft(null);
       return newOrder;
     },
     [cart, discountVnd, orders.length, subtotalVnd, totalVnd]
@@ -422,6 +436,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         quickViewProduct,
         activeVehicle,
         orders,
+        bookingDraft,
         toastMessage,
         addToCart,
         updateCartQuantity,
@@ -435,6 +450,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         openQuickView,
         closeQuickView,
         setActiveVehicle,
+        setBookingDraft,
         placeOrder,
       }}
     >

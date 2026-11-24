@@ -11,6 +11,7 @@ import { Footer } from "@/components/layout/footer";
 import { MobileBottomDock } from "@/components/layout/mobile-bottom-dock";
 import { MiniCartDrawer } from "@/features/cart/components/mini-cart-drawer";
 import { QuickViewModal } from "@/features/catalog/components/quick-view-modal";
+import { AutoraAgentHost } from "@/features/agent/autora-agent-host";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -84,6 +85,7 @@ export default function RootLayout({
           <MobileBottomDock />
           <MiniCartDrawer />
           <QuickViewModal />
+          <AutoraAgentHost />
         </StoreProvider>
       </body>
     </html>

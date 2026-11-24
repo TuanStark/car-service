@@ -117,7 +117,7 @@ export function Navbar() {
         <div className="flex items-center gap-2 sm:gap-2.5">
           <Link
             href={ROUTES.SERVICES}
-            className="hidden md:inline-flex h-9 items-center gap-1.5 rounded-md bg-brand px-3.5 text-xs font-bold text-white shadow-xs hover:bg-brand-hover transition-colors"
+            className="hidden md:inline-flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-xs font-semibold text-white shadow-xs hover:bg-brand-hover transition-colors"
           >
             <Wrench className="h-3.5 w-3.5" />
             <span>Tìm dịch vụ</span>
@@ -125,9 +125,14 @@ export function Navbar() {
 
           <Link
             href={ROUTES.GARAGES}
-            className="hidden sm:inline-flex h-9 items-center gap-1.5 rounded-md border border-line-strong bg-white px-3.5 text-xs font-bold text-ink shadow-xs hover:bg-surface-subtle transition-colors"
+            className={cn(
+              "hidden sm:inline-flex h-9 items-center gap-1.5 rounded-lg px-3.5 text-xs font-semibold transition-colors",
+              isTransparent
+                ? "border border-white/25 bg-white/15 text-white backdrop-blur-sm hover:bg-white/25"
+                : "border border-line-strong bg-white text-ink shadow-xs hover:bg-surface-subtle"
+            )}
           >
-            <MapPin className="h-3.5 w-3.5 text-brand" />
+            <MapPin className={cn("h-3.5 w-3.5", isTransparent ? "text-amber-300" : "text-brand")} />
             <span>Tìm gara</span>
           </Link>
 
