@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ActorRole {
+  guest
+  customer
+  partner_staff
+}
+
+enum MessageRole {
+  user
+  assistant
+  tool
+  system
+}
+
+model Tenant {
+  id                 String           @id
+  name               String
+  domain             String
+  apiKeyHash         String
+  allowedOrigins     String[]
+  manifestJson       Json
+  isActive           Boolean          @default(true)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  sessions           AgentSession[]
+  knowledgeChunks    KnowledgeChunk[]
+  auditLogs          AuditLog[]
+}
+
+model AgentSession {
+  id           String         @id @default(uuid())
+  tenantId     String
+  tenant       Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  actorRole    ActorRole      @default(guest)
+  actorUserId  String?
+  metadataJson Json?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  expiresAt    DateTime
+  messages     AgentMessage[]
+  auditLogs    AuditLog[]
+
+  @@index([tenantId, actorUserId])
+}
+
+model AgentMessage {
+  id          String       @id @default(uuid())
+  sessionId   String
+  session     AgentSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role        MessageRole
+  content     String
+  actionsJson Json?
+  cardsJson   Json?
+  toolCalls   Json?
+  provider    String?
+  latencyMs   Int?
+  createdAt   DateTime     @default(now())
+
+  @@index([sessionId, createdAt])
+}
+
+model KnowledgeChunk {
+  id           String   @id @default(uuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sourceId     String
+  title        String
+  content      String
+  accessRole   ActorRole @default(guest)
+  metadataJson Json?
+  // Store 768-dim embedding vector via pgvector (managed via raw SQL migration/index)
+  createdAt    DateTime @default(now())
+
+  @@index([tenantId, accessRole])
+}
+
+model AuditLog {
+  id           String       @id @default(uuid())
+  tenantId     String
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sessionId    String?
+  session      AgentSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  actorRole    ActorRole
+  actorUserId  String?
+  eventType    String
+  toolName     String?
+  actionTarget String?
+  allowed      Boolean      @default(true)
+  reason       String?
+  latencyMs    Int?
+  provider     String?
+  createdAt    DateTime     @default(now())
+
+  @@index([tenantId, createdAt])
+  @@index([sessionId])
+}
