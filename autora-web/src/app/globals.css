@@ -1,26 +1,31 @@
 @import "tailwindcss";
 
 :root {
-  /* Daylight Precision Semantic Palette */
-  --bg-canvas: #F6F7F9;
+  /* Clean Bright Automotive E-Commerce Palette */
+  --bg-canvas: #F8FAFC;
   --bg-surface: #FFFFFF;
-  --bg-surface-subtle: #ECEFF4;
-  --bg-surface-hover: #E2E7EF;
+  --bg-surface-subtle: #F1F5F9;
+  --bg-surface-hover: #E2E8F0;
 
-  --ink-primary: #111827;
-  --ink-secondary: #525E70;
+  --ink-primary: #0F172A;
+  --ink-secondary: #475569;
   --ink-muted: #64748B;
   --ink-inverse: #FFFFFF;
 
-  /* Brand & Signal Accents */
-  --brand-primary: #0E4D64;
-  --brand-primary-hover: #0A3B4D;
-  --brand-soft: #E6F0F4;
+  /* Trustworthy Cobalt Blue + Warm Amber/Coral Accents */
+  --brand-primary: #0056B3;
+  --brand-primary-hover: #004494;
+  --brand-soft: #EBF4FF;
+
   --accent-signal: #E85A24;
   --accent-signal-hover: #D04917;
   --accent-soft: #FFF1EB;
 
-  /* Architectural Borders */
+  --butter-yellow: #F59E0B;
+  --butter-soft: #FEF3C7;
+  --fresh-green: #16A34A;
+  --green-soft: #DCFCE7;
+
   --border-hairline: #E2E8F0;
   --border-strong: #CBD5E1;
 }
@@ -68,15 +73,39 @@
   }
 }
 
-/* Light architectural drafting grid */
-.workshop-grid-bg {
-  background-image:
-    linear-gradient(to right, rgba(14, 77, 100, 0.04) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(14, 77, 100, 0.04) 1px, transparent 1px);
-  background-size: 56px 56px;
+@keyframes autora-marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
-/* Clean light scrollbar */
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: autora-marquee 28s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee {
+    animation: none !important;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;

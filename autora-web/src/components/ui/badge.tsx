@@ -3,22 +3,20 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/core/lib/cn";
 
 const badgeVariants = cva(
-  "inline-flex items-center gap-1.5 rounded-sm px-2.5 py-1 text-xs font-semibold tracking-wide transition-colors",
+  "inline-flex items-center gap-1.5 rounded-md px-2.5 py-0.5 text-xs font-semibold tracking-wide transition-colors",
   {
     variants: {
       variant: {
-        default:
-          "bg-brand-soft text-brand border border-brand/20",
-        accent:
-          "bg-accent-soft text-accent border border-accent/25",
+        default: "bg-brand-soft text-brand border border-brand/20",
+        accent: "bg-accent-soft text-accent border border-accent/25",
         solidAccent:
           "bg-accent text-ink-inverse font-bold uppercase tracking-wider",
         solidBrand:
           "bg-brand text-ink-inverse font-bold uppercase tracking-wider",
-        muted:
-          "bg-surface-subtle text-ink-secondary border border-line",
+        fresh: "bg-[#DCFCE7] text-[#15803D] border border-[#16A34A]/20",
+        muted: "bg-surface-subtle text-ink-secondary border border-line",
         technical:
-          "bg-surface/95 backdrop-blur-md text-ink border border-line-strong font-mono text-[11px] uppercase tracking-[0.12em]",
+          "bg-surface/95 backdrop-blur-md text-ink border border-line-strong font-mono text-[11px] uppercase tracking-wider shadow-xs",
       },
     },
     defaultVariants: {
