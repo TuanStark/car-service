@@ -59,7 +59,7 @@ export function Navbar() {
   return (
     <header
       className={cn(
-        "z-40 w-full transition-all duration-300",
+        "z-40 w-full pt-safe transition-all duration-300",
         isHomePage ? "fixed inset-x-0 top-0" : "sticky top-0",
         isTransparent
           ? "bg-transparent text-white border-b border-transparent"

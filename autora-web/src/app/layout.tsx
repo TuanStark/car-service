@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import {
   Barlow_Condensed,
   Be_Vietnam_Pro,
@@ -8,9 +8,17 @@ import { SITE_CONFIG } from "@/config/site.config";
 import { StoreProvider } from "@/features/cart/context/store-context";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
+import { MobileBottomDock } from "@/components/layout/mobile-bottom-dock";
 import { MiniCartDrawer } from "@/features/cart/components/mini-cart-drawer";
 import { QuickViewModal } from "@/features/catalog/components/quick-view-modal";
 import "./globals.css";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#0056B3",
+};
 
 const barlowCondensed = Barlow_Condensed({
   variable: "--font-barlow-condensed",
@@ -67,8 +75,9 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-canvas text-ink">
         <StoreProvider>
           <Navbar />
-          <main className="flex-1">{children}</main>
+          <main className="flex-1 pb-20 lg:pb-0">{children}</main>
           <Footer />
+          <MobileBottomDock />
           <MiniCartDrawer />
           <QuickViewModal />
         </StoreProvider>

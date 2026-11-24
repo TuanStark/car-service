@@ -139,8 +139,8 @@ export function NhatQuangStyleHome({
 
   return (
     <div className="bg-surface">
-      {/* FULL-VIEWPORT VIDEO HERO (100vh) + BOTTOM YELLOW/COBALT PILL FINDER */}
-      <section className="relative h-screen min-h-[620px] w-full overflow-hidden bg-slate-900">
+      {/* FULL-VIEWPORT VIDEO HERO (100dvh for iOS Notch/Dynamic Island) + BOTTOM PILL FINDER */}
+      <section className="relative h-[100dvh] min-h-[580px] hero-mobile-landscape w-full overflow-hidden bg-slate-900">
         <video
           src="/videos/hero-slider.mp4"
           autoPlay
@@ -152,13 +152,13 @@ export function NhatQuangStyleHome({
         />
 
         {/* Subtle Top & Bottom Gradient so Transparent Header & Bottom Bar stay crisp */}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/45 via-transparent to-black/45" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/45 via-transparent to-black/50" />
 
-        {/* Bottom Floating Yellow + Cobalt Pill Search Bar (Exact NhatQuang Pattern) */}
-        <div className="absolute inset-x-0 bottom-6 z-20 px-4">
+        {/* Bottom Floating Yellow + Cobalt Pill Search Bar (Responsive 320px -> Foldable -> Desktop) */}
+        <div className="absolute inset-x-0 bottom-20 sm:bottom-8 z-20 px-safe">
           <form
             onSubmit={handleFinderGo}
-            className="mx-auto flex w-full max-w-xl items-center gap-2"
+            className="mx-auto flex w-full max-w-xl flex-col sm:flex-row items-stretch sm:items-center gap-2"
           >
             {/* Left Yellow Mode Switcher Pill */}
             <div className="flex h-12 shrink-0 items-center rounded-md bg-[#FFE600] p-1 shadow-lg">
@@ -384,7 +384,7 @@ export function NhatQuangStyleHome({
       {/* SEC 5: Tại sao là AUTORA Car Service? */}
       <section className="border-y border-line bg-canvas py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:items-center">
+          <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:items-center fold-dual-grid">
             <div className="lg:col-span-6 space-y-5">
               <h2 className="font-display text-4xl sm:text-5xl font-extrabold uppercase leading-tight text-ink">
                 Tại sao là AUTORA Car Service?

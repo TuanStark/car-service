@@ -28,6 +28,12 @@
 
   --border-hairline: #E2E8F0;
   --border-strong: #CBD5E1;
+
+  /* Safe-area & Foldable Hinge Defaults */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
 }
 
 @theme inline {
@@ -58,6 +64,7 @@
     scroll-behavior: smooth;
     background-color: var(--bg-canvas);
     color: var(--ink-primary);
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
@@ -70,6 +77,50 @@
   ::selection {
     background-color: var(--brand-primary);
     color: var(--ink-inverse);
+  }
+}
+
+/* Safe-Area Helpers for iPhone Dynamic Island / Notch / Home Bar */
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.pb-safe {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+}
+
+.px-safe {
+  padding-left: max(1rem, env(safe-area-inset-left, 0px));
+  padding-right: max(1rem, env(safe-area-inset-right, 0px));
+}
+
+/* Dual-Screen & Foldable Device Support (Surface Duo / Galaxy Z Fold / Dual-Pane) */
+@media (horizontal-viewport-segments: 2) {
+  .fold-dual-grid {
+    display: grid !important;
+    grid-template-columns:
+      env(viewport-segment-width 0 0)
+      env(viewport-segment-width 1 0) !important;
+    column-gap: calc(
+      env(viewport-segment-left 1 0) - env(viewport-segment-right 0 0)
+    ) !important;
+  }
+
+  .fold-span-left {
+    width: env(viewport-segment-width 0 0) !important;
+    max-width: env(viewport-segment-width 0 0) !important;
+  }
+
+  .fold-avoid-hinge {
+    margin-left: env(viewport-segment-left 1 0);
+  }
+}
+
+/* Compact Landscape Mobile (e.g., iPhone rotated sideways) */
+@media (max-height: 500px) and (orientation: landscape) {
+  .hero-mobile-landscape {
+    min-height: 460px !important;
+    height: auto !important;
   }
 }
 
