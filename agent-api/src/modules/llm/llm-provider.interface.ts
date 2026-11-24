@@ -50,18 +50,51 @@ export class LlmQuotaError extends Error {
 export function extractActionsAndCleanText(rawText: string): {
   cleanText: string;
   actions: unknown[];
+  toolCalls: LlmToolCall[];
 } {
   const jsonBlockMatch = rawText.match(/```json\s*([\s\S]*?)\s*```/i);
   if (jsonBlockMatch) {
     try {
-      const parsed = JSON.parse(jsonBlockMatch[1]);
-      const actions = Array.isArray(parsed?.actions) ? parsed.actions : [];
+      const parsed = JSON.parse(jsonBlockMatch[1]) as {
+        actions?: unknown[];
+        toolCalls?: Array<{ name?: string; arguments?: Record<string, unknown> }>;
+      };
+      const actions = Array.isArray(parsed?.actions)
+        ? parsed.actions.map((item) => {
+            if (item && typeof item === "object") {
+              const rec = item as Record<string, unknown>;
+              return {
+                type: typeof rec.type === "string" ? rec.type : "navigate",
+                label:
+                  typeof rec.label === "string" && rec.label.trim()
+                    ? rec.label
+                    : typeof rec.target === "string"
+                    ? `Đi tới ${rec.target}`
+                    : "Thực hiện",
+                ...rec,
+              };
+            }
+            return item;
+          })
+        : [];
+      const toolCalls: LlmToolCall[] = Array.isArray(parsed?.toolCalls)
+        ? parsed.toolCalls
+            .filter((tc) => typeof tc?.name === "string" && tc.name.trim().length > 0)
+            .map((tc, idx) => ({
+              id: `cli_tc_${Date.now()}_${idx}`,
+              name: tc.name as string,
+              arguments:
+                tc.arguments && typeof tc.arguments === "object"
+                  ? tc.arguments
+                  : {},
+            }))
+        : [];
       const cleanText = rawText.replace(jsonBlockMatch[0], "").trim();
-      return { cleanText, actions };
+      return { cleanText, actions, toolCalls };
     } catch {
       // Ignore malformed JSON block
     }
   }
-  return { cleanText: rawText.trim(), actions: [] };
+  return { cleanText: rawText.trim(), actions: [], toolCalls: [] };
 }
 

@@ -63,7 +63,7 @@ export class OpenRouterProvider implements ILlmProvider {
       }),
     });
 
-    if (res.status === 429) {
+    if (res.status === 429 || res.status === 402) {
       throw new LlmQuotaError(this.name, await res.text());
     }
 
@@ -99,14 +99,16 @@ export class OpenRouterProvider implements ILlmProvider {
       };
     });
 
-    const { cleanText, actions } = extractActionsAndCleanText(
-      msg?.content ?? ""
-    );
+    const {
+      cleanText,
+      actions,
+      toolCalls: extractedToolCalls,
+    } = extractActionsAndCleanText(msg?.content ?? "");
 
     return {
       provider: this.name,
       text: cleanText,
-      toolCalls,
+      toolCalls: toolCalls.length > 0 ? toolCalls : extractedToolCalls,
       proposedActions: actions,
     };
   }

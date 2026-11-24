@@ -98,14 +98,16 @@ export class GeminiApiProvider implements ILlmProvider {
       }
     });
 
-    const { cleanText, actions } = extractActionsAndCleanText(
-      textParts.join("\n")
-    );
+    const {
+      cleanText,
+      actions,
+      toolCalls: extractedToolCalls,
+    } = extractActionsAndCleanText(textParts.join("\n"));
 
     return {
       provider: this.name,
       text: cleanText,
-      toolCalls,
+      toolCalls: toolCalls.length > 0 ? toolCalls : extractedToolCalls,
       proposedActions: actions,
     };
   }

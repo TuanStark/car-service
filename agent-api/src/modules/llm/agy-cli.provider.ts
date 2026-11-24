@@ -54,18 +54,22 @@ export class AgyCliProvider implements ILlmProvider {
 
     let rawText = stdout.trim();
     try {
-      const parsed = JSON.parse(rawText) as { result?: string; text?: string };
-      rawText = parsed.result ?? parsed.text ?? rawText;
+      const parsed = JSON.parse(rawText) as {
+        response?: string;
+        result?: string;
+        text?: string;
+      };
+      rawText = parsed.response ?? parsed.result ?? parsed.text ?? rawText;
     } catch {
       // Keep raw stdout if plain text
     }
 
-    const { cleanText, actions } = extractActionsAndCleanText(rawText);
+    const { cleanText, actions, toolCalls } = extractActionsAndCleanText(rawText);
 
     return {
       provider: this.name,
       text: cleanText,
-      toolCalls: [],
+      toolCalls,
       proposedActions: actions,
     };
   }
