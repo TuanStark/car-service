@@ -74,8 +74,8 @@ export function AdminShell({
   return (
     <div className="flex min-h-screen bg-canvas">
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex w-60 shrink-0 flex-col border-r border-line bg-surface">
-        <div className="flex h-16 items-center gap-2.5 border-b border-line px-5">
+      <aside className="hidden lg:flex lg:sticky lg:top-0 lg:h-screen w-60 shrink-0 flex-col border-r border-line bg-surface">
+        <div className="flex h-16 shrink-0 items-center gap-2.5 border-b border-line px-5">
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-white font-bold text-sm">
             A
           </span>
@@ -89,7 +89,7 @@ export function AdminShell({
           </div>
         </div>
 
-        <nav className="flex-1 overflow-y-auto space-y-1 p-3" aria-label="Menu quản trị">
+        <nav className="flex-1 min-h-0 overflow-y-auto space-y-0.5 p-3" aria-label="Menu quản trị">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             const isActive =
@@ -114,7 +114,7 @@ export function AdminShell({
           })}
         </nav>
 
-        <div className="border-t border-line p-3 space-y-2.5">
+        <div className="shrink-0 border-t border-line p-3 space-y-2.5">
           <div className="rounded-lg bg-surface-subtle px-3 py-2">
             <strong className="block truncate text-xs font-semibold text-ink">
               {user?.fullName ?? "Quản trị viên"}
@@ -142,8 +142,8 @@ export function AdminShell({
             className="fixed inset-0 bg-slate-950/40"
             onClick={() => setMobileMenuOpen(false)}
           />
-          <aside className="relative z-10 flex w-64 flex-col bg-surface shadow-xl">
-            <div className="flex h-14 items-center justify-between border-b border-line px-4">
+          <aside className="relative z-10 flex h-full w-64 flex-col bg-surface shadow-xl">
+            <div className="flex h-14 shrink-0 items-center justify-between border-b border-line px-4">
               <span className="text-sm font-bold text-ink">AUTORA Admin</span>
               <button
                 type="button"
@@ -154,7 +154,7 @@ export function AdminShell({
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <nav className="flex-1 overflow-y-auto space-y-1 p-3">
+            <nav className="flex-1 min-h-0 overflow-y-auto space-y-0.5 p-3">
               {NAV_ITEMS.map((item) => {
                 const Icon = item.icon;
                 const isActive =
