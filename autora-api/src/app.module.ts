@@ -34,6 +34,8 @@ import { WarrantiesModule } from "@modules/warranties/warranties.module";
 import { PromotionsModule } from "@modules/promotions/promotions.module";
 import { ReviewsModule } from "@modules/reviews/reviews.module";
 import { ReportsModule } from "@modules/reports/reports.module";
+import { CrmModule } from "@modules/crm/crm.module";
+import { ContentModule } from "@modules/content/content.module";
 
 @Module({
   imports: [
@@ -75,6 +77,8 @@ import { ReportsModule } from "@modules/reports/reports.module";
     PromotionsModule,
     ReviewsModule,
     ReportsModule,
+    CrmModule,
+    ContentModule,
   ],
   providers: [
     {

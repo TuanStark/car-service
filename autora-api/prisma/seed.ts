@@ -1,6 +1,8 @@
 import {
+  ArticleStatus,
   BookingStatus,
   CityCode,
+  ContactInquiryStatus,
   CouponDiscountType,
   EquipmentCategory,
   EquipmentMaintenanceType,
@@ -1201,6 +1203,74 @@ async function main(): Promise<void> {
         ],
       });
     }
+  }
+
+  // ── Phase 6: Sample CMS Articles & Contact Inquiries ────────────────────
+  const articleSeeds = [
+    {
+      slug: "khi-nao-can-thay-dau-dong-co-5w30",
+      title: "Khi nào cần thay dầu động cơ tổng hợp 5W-30 cho xe đô thị?",
+      excerpt:
+        "Hướng dẫn nhận biết mốc thay dầu chuẩn 5.000 - 10.000 km và cách chọn độ nhớt phù hợp điều kiện kẹt xe tại Việt Nam.",
+      contentMarkdown:
+        "Xe vận hành thường xuyên trong nội đô kẹt xe có nhiệt độ dầu cao hơn đường trường. Chủ xe nên thay dầu tổng hợp toàn phần 5W-30 mỗi 7.000 - 10.000 km hoặc 6 tháng/lần kèm thay lọc nhớt chính hãng.",
+      coverImageUrl:
+        "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&w=1200&q=80",
+      category: "Bảo dưỡng định kỳ",
+      status: ArticleStatus.PUBLISHED,
+      publishedAt: new Date(),
+      authorEmail: "admin@autora.vn",
+    },
+    {
+      slug: "quy-trinh-kiem-tra-24-hang-muc-truoc-chuyen-di-xa",
+      title: "Checklist 24 hạng mục an toàn trước mỗi chuyến đi đường dài",
+      excerpt:
+        "Kiểm tra lốp, má phanh, ắc quy và hệ thống làm mát giúp hạn chế 90% sự cố nằm đường.",
+      contentMarkdown:
+        "Trước các chuyến đi xa trên cao tốc, hãy kiểm tra áp suất 4 lốp + lốp dự phòng, độ dày má phanh, mức nước làm mát và điện áp ắc quy tại các xưởng AUTORA.",
+      coverImageUrl:
+        "https://images.unsplash.com/photo-1530046339160-ce3e530c7d2f?auto=format&fit=crop&w=1200&q=80",
+      category: "An toàn vận hành",
+      status: ArticleStatus.PUBLISHED,
+      publishedAt: new Date(),
+      authorEmail: "admin@autora.vn",
+    },
+  ];
+
+  for (const a of articleSeeds) {
+    await prisma.article.upsert({
+      where: { slug: a.slug },
+      update: {},
+      create: { id: generateUuidV7(), ...a },
+    });
+  }
+
+  const inquiryCount = await prisma.contactInquiry.count();
+  if (inquiryCount === 0) {
+    await prisma.contactInquiry.createMany({
+      data: [
+        {
+          id: generateUuidV7(),
+          fullName: "Phạm Hoàng Nam",
+          phone: "0912345678",
+          email: "nam.pham@example.com",
+          vehicleInfo: "Toyota Camry 2.5Q (2022) — ODO 40.000 km",
+          message: "Cần báo giá gói bảo dưỡng lớn mốc 40.000 km tại Quận 7.",
+          status: ContactInquiryStatus.NEW,
+        },
+        {
+          id: generateUuidV7(),
+          fullName: "Nguyễn Thu Hà",
+          phone: "0987654321",
+          email: "ha.nguyen@example.com",
+          vehicleInfo: "Hyundai Tucson (2023)",
+          message: "Tư vấn gói phủ Ceramic 9H và dán phim cách nhiệt.",
+          status: ContactInquiryStatus.CONTACTED,
+          staffNote: "Đã gọi tư vấn lịch hẹn sáng thứ 6",
+          assignedToEmail: "sa.lan@autora.vn",
+        },
+      ],
+    });
   }
 
   console.log("[Seed] AUTORA database seeded successfully (Admin: admin@autora.vn / AutoraAdmin@2026).");

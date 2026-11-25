@@ -1010,3 +1010,54 @@ model ExpenseEntry {
   @@index([category, occurredAt])
   @@map("expense_entries")
 }
+
+// ==============================================================================
+// PHASE 6: CRM RETENTION & CMS (ARTICLES + CONTACT INQUIRIES)
+// ==============================================================================
+
+enum ArticleStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum ContactInquiryStatus {
+  NEW
+  CONTACTED
+  RESOLVED
+}
+
+model Article {
+  id              String        @id @default(uuid()) @db.Uuid
+  slug            String        @unique @db.VarChar(200)
+  title           String        @db.VarChar(240)
+  excerpt         String        @db.VarChar(500)
+  contentMarkdown String        @map("content_markdown") @db.Text
+  coverImageUrl   String        @map("cover_image_url") @db.VarChar(500)
+  category        String        @db.VarChar(80)
+  status          ArticleStatus @default(DRAFT)
+  publishedAt     DateTime?     @map("published_at")
+  authorEmail     String?       @map("author_email") @db.VarChar(255)
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  deletedAt       DateTime?     @map("deleted_at")
+
+  @@index([status, deletedAt, publishedAt])
+  @@map("articles")
+}
+
+model ContactInquiry {
+  id              String               @id @default(uuid()) @db.Uuid
+  fullName        String               @map("full_name") @db.VarChar(150)
+  phone           String               @db.VarChar(20)
+  email           String?              @db.VarChar(255)
+  vehicleInfo     String?              @map("vehicle_info") @db.VarChar(200)
+  message         String               @db.Text
+  status          ContactInquiryStatus @default(NEW)
+  staffNote       String?              @map("staff_note") @db.Text
+  assignedToEmail String?              @map("assigned_to_email") @db.VarChar(255)
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
+
+  @@index([status, createdAt])
+  @@map("contact_inquiries")
+}
