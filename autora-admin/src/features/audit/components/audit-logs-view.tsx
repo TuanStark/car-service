@@ -52,6 +52,13 @@ const EVENT_LABELS: Record<string, string> = {
   "admin.booking.parts_issued_bom": "Xuất vật tư tự động theo BOM",
   "admin.booking.part_issued": "Xuất lẻ vật tư cho RO",
   "admin.booking.part_returned": "Hoàn kho vật tư từ RO",
+  "admin.equipment.created": "Thêm thiết bị / công cụ mới",
+  "admin.equipment.updated": "Cập nhật trạng thái thiết bị xưởng",
+  "admin.equipment.maintenance_recorded": "Ghi nhận bảo trì / hiệu chuẩn thiết bị",
+  "admin.equipment.tool_checked_out": "Xuất mượn công cụ cho KTV",
+  "admin.equipment.tool_returned": "Nhận trả công cụ chuyên dụng",
+  "admin.staff.created": "Tạo tài khoản nhân sự / KTV",
+  "admin.staff.technician_updated": "Cập nhật hồ sơ chuyên môn KTV",
 };
 
 function formatPayloadPreview(payload: unknown): string {

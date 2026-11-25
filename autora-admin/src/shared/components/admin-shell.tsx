@@ -13,7 +13,9 @@ import {
   LogOut,
   Menu,
   Package,
+  ShieldCheck,
   Truck,
+  UserCog,
   Users,
   Wrench,
   X,
@@ -31,6 +33,8 @@ const NAV_ITEMS = [
   { href: "/inventory", label: "Kho phụ tùng", icon: Package, exact: true },
   { href: "/inventory/movements", label: "Thẻ kho (Ledger)", icon: History },
   { href: "/procurement", label: "Nhập hàng & NCC", icon: Truck },
+  { href: "/equipment", label: "Thiết bị & Dụng cụ", icon: ShieldCheck },
+  { href: "/staff", label: "Nhân sự & KTV", icon: UserCog },
   { href: "/customers", label: "Khách hàng", icon: Users },
   { href: "/audit-logs", label: "Nhật ký hệ thống", icon: FileClock },
 ] as const;

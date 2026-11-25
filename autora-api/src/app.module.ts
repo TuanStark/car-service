@@ -28,6 +28,8 @@ import { IamModule } from "@modules/iam/iam.module";
 import { InventoryModule } from "@modules/inventory/inventory.module";
 import { MediaModule } from "@modules/media/media.module";
 import { ProcurementModule } from "@modules/procurement/procurement.module";
+import { EquipmentModule } from "@modules/equipment/equipment.module";
+import { WorkforceModule } from "@modules/workforce/workforce.module";
 
 @Module({
   imports: [
@@ -63,6 +65,8 @@ import { ProcurementModule } from "@modules/procurement/procurement.module";
     MediaModule,
     InventoryModule,
     ProcurementModule,
+    EquipmentModule,
+    WorkforceModule,
   ],
   providers: [
     {

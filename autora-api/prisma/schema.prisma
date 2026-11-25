@@ -148,12 +148,15 @@ model User {
   updatedAt    DateTime   @updatedAt @map("updated_at")
   deletedAt    DateTime?  @map("deleted_at")
 
-  userRoles     UserRole[]
-  refreshTokens RefreshToken[]
-  vehicles      CustomerVehicle[]
-  bookings      Booking[]
-  reviews       Review[]
-  ownedGarages  Garage[]          @relation("GarageOwner")
+  userRoles            UserRole[]
+  refreshTokens        RefreshToken[]
+  vehicles             CustomerVehicle[]
+  bookings             Booking[]
+  assignedBookings     Booking[]             @relation("BookingTechnician")
+  reviews              Review[]
+  ownedGarages         Garage[]              @relation("GarageOwner")
+  technicianProfile    TechnicianProfile?
+  toolCheckouts        ToolCheckoutLog[]     @relation("ToolCheckoutTech")
 
   @@index([email, deletedAt])
   @@index([status, deletedAt])
@@ -345,11 +348,13 @@ model Garage {
   owner          User?             @relation("GarageOwner", fields: [ownerUserId], references: [id])
   bays           ServiceBay[]
   garageServices GarageService[]
-  inventories    GarageInventory[]
-  purchaseOrders PurchaseOrder[]
-  stockMovements StockMovement[]
-  partUsages     BookingPartUsage[]
-  bookings       Booking[]
+  inventories        GarageInventory[]
+  purchaseOrders     PurchaseOrder[]
+  stockMovements     StockMovement[]
+  partUsages         BookingPartUsage[]
+  equipments         WorkshopEquipment[]
+  technicianProfiles TechnicianProfile[] @relation("TechPrimaryGarage")
+  bookings           Booking[]
   reviews        Review[]
 
   @@index([cityCode, verified, deletedAt])
@@ -370,8 +375,9 @@ model ServiceBay {
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
 
-  garage   Garage    @relation(fields: [garageId], references: [id], onDelete: Cascade)
-  bookings Booking[]
+  garage     Garage              @relation(fields: [garageId], references: [id], onDelete: Cascade)
+  bookings   Booking[]
+  equipments WorkshopEquipment[]
 
   @@unique([garageId, code])
   @@index([garageId, status])
@@ -448,6 +454,7 @@ model Booking {
   userId                 String?                @map("user_id") @db.Uuid
   garageId               String                 @map("garage_id") @db.Uuid
   bayId                  String?                @map("bay_id") @db.Uuid
+  assignedTechnicianId   String?                @map("assigned_technician_id") @db.Uuid
   vehicleId              String?                @map("vehicle_id") @db.Uuid
   couponId               String?                @map("coupon_id") @db.Uuid
   appointmentDate        DateTime               @map("appointment_date") @db.Date
@@ -474,16 +481,18 @@ model Booking {
   updatedAt              DateTime               @updatedAt @map("updated_at")
   deletedAt              DateTime?              @map("deleted_at")
 
-  user          User?                  @relation(fields: [userId], references: [id], onDelete: SetNull)
-  garage        Garage                 @relation(fields: [garageId], references: [id])
-  bay           ServiceBay?            @relation(fields: [bayId], references: [id], onDelete: SetNull)
-  vehicle       CustomerVehicle?       @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
-  coupon        Coupon?                @relation(fields: [couponId], references: [id], onDelete: SetNull)
-  items         BookingItem[]
-  statusHistory BookingStatusHistory[]
-  inspections   BookingInspection[]
-  paymentLogs   BookingPaymentLog[]
-  partUsages    BookingPartUsage[]
+  user               User?                  @relation(fields: [userId], references: [id], onDelete: SetNull)
+  garage             Garage                 @relation(fields: [garageId], references: [id])
+  bay                ServiceBay?            @relation(fields: [bayId], references: [id], onDelete: SetNull)
+  assignedTechnician User?                  @relation("BookingTechnician", fields: [assignedTechnicianId], references: [id], onDelete: SetNull)
+  vehicle            CustomerVehicle?       @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+  coupon             Coupon?                @relation(fields: [couponId], references: [id], onDelete: SetNull)
+  items              BookingItem[]
+  statusHistory      BookingStatusHistory[]
+  inspections        BookingInspection[]
+  paymentLogs        BookingPaymentLog[]
+  partUsages         BookingPartUsage[]
+  toolCheckouts      ToolCheckoutLog[]
 
   @@index([userId, createdAt])
   @@index([garageId, appointmentDate, appointmentTime, status])
@@ -748,4 +757,136 @@ model BookingPartUsage {
   @@index([bookingId])
   @@index([garageId, createdAt])
   @@map("booking_part_usages")
+}
+
+// ==============================================================================
+// PHASE 3: WORKSHOP EQUIPMENT, SPECIAL TOOLS & TECHNICIAN WORKFORCE
+// ==============================================================================
+
+enum EquipmentCategory {
+  LIFT
+  DIAGNOSTIC_SCANNER
+  WHEEL_ALIGNMENT
+  AC_MACHINE
+  PAINT_BOOTH
+  SPECIAL_TOOL
+}
+
+enum EquipmentStatus {
+  OPERATIONAL
+  IN_USE
+  MAINTENANCE
+  BROKEN
+}
+
+enum EquipmentMaintenanceType {
+  ROUTINE
+  CALIBRATION
+  REPAIR
+}
+
+enum ToolReturnCondition {
+  GOOD
+  DAMAGED
+  MISSING
+}
+
+enum TechnicianSpecialty {
+  GENERAL_MAINT
+  POWERTRAIN
+  CHASSIS_BRAKE
+  ELECTRICAL
+  DETAILING
+  TIRES
+}
+
+enum TechnicianSkillLevel {
+  JUNIOR
+  SENIOR
+  MASTER
+}
+
+model WorkshopEquipment {
+  id                String            @id @default(uuid()) @db.Uuid
+  garageId          String            @map("garage_id") @db.Uuid
+  serviceBayId      String?           @map("service_bay_id") @db.Uuid
+  assetCode         String            @unique @map("asset_code") @db.VarChar(40)
+  name              String            @db.VarChar(200)
+  category          EquipmentCategory
+  brandModel        String?           @map("brand_model") @db.VarChar(150)
+  serialNumber      String?           @map("serial_number") @db.VarChar(100)
+  status            EquipmentStatus   @default(OPERATIONAL)
+  purchaseDate      DateTime?         @map("purchase_date") @db.Date
+  purchaseCostVnd   Int               @default(0) @map("purchase_cost_vnd")
+  nextMaintenanceAt DateTime?         @map("next_maintenance_at") @db.Date
+  calibrationDueAt  DateTime?         @map("calibration_due_at") @db.Date
+  notes             String?           @db.Text
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+
+  garage          Garage                    @relation(fields: [garageId], references: [id], onDelete: Cascade)
+  serviceBay      ServiceBay?               @relation(fields: [serviceBayId], references: [id], onDelete: SetNull)
+  maintenanceLogs EquipmentMaintenanceLog[]
+  toolCheckouts   ToolCheckoutLog[]
+
+  @@index([garageId, status])
+  @@index([calibrationDueAt])
+  @@index([nextMaintenanceAt])
+  @@map("workshop_equipments")
+}
+
+model EquipmentMaintenanceLog {
+  id              String                   @id @default(uuid()) @db.Uuid
+  equipmentId     String                   @map("equipment_id") @db.Uuid
+  maintenanceType EquipmentMaintenanceType @map("maintenance_type")
+  performedAt     DateTime                 @default(now()) @map("performed_at")
+  costVnd         Int                      @default(0) @map("cost_vnd")
+  vendorName      String?                  @map("vendor_name") @db.VarChar(150)
+  nextDueAt       DateTime?                @map("next_due_at") @db.Date
+  notes           String?                  @db.Text
+  recordedByEmail String?                  @map("recorded_by_email") @db.VarChar(255)
+  createdAt       DateTime                 @default(now()) @map("created_at")
+
+  equipment WorkshopEquipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+
+  @@index([equipmentId, performedAt])
+  @@map("equipment_maintenance_logs")
+}
+
+model ToolCheckoutLog {
+  id               String               @id @default(uuid()) @db.Uuid
+  equipmentId      String               @map("equipment_id") @db.Uuid
+  technicianUserId String               @map("technician_user_id") @db.Uuid
+  bookingId        String?              @map("booking_id") @db.Uuid
+  checkedOutAt     DateTime             @default(now()) @map("checked_out_at")
+  expectedReturnAt DateTime?            @map("expected_return_at")
+  returnedAt       DateTime?            @map("returned_at")
+  returnCondition  ToolReturnCondition? @map("return_condition")
+  notes            String?              @db.VarChar(400)
+
+  equipment  WorkshopEquipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  technician User              @relation("ToolCheckoutTech", fields: [technicianUserId], references: [id], onDelete: Cascade)
+  booking    Booking?          @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  @@index([equipmentId, returnedAt])
+  @@index([technicianUserId, returnedAt])
+  @@map("tool_checkout_logs")
+}
+
+model TechnicianProfile {
+  userId             String               @id @map("user_id") @db.Uuid
+  primaryGarageId    String?              @map("primary_garage_id") @db.Uuid
+  specialty          TechnicianSpecialty  @default(GENERAL_MAINT)
+  skillLevel         TechnicianSkillLevel @default(SENIOR) @map("skill_level")
+  laborCommissionPct Decimal              @default(15.0) @map("labor_commission_pct") @db.Decimal(5, 2)
+  hourlyRateVnd      Int                  @default(80000) @map("hourly_rate_vnd")
+  isActive           Boolean              @default(true) @map("is_active")
+  createdAt          DateTime             @default(now()) @map("created_at")
+  updatedAt          DateTime             @updatedAt @map("updated_at")
+
+  user          User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  primaryGarage Garage? @relation("TechPrimaryGarage", fields: [primaryGarageId], references: [id], onDelete: SetNull)
+
+  @@index([primaryGarageId, isActive])
+  @@map("technician_profiles")
 }

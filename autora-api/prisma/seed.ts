@@ -2,11 +2,16 @@ import {
   BookingStatus,
   CityCode,
   CouponDiscountType,
+  EquipmentCategory,
+  EquipmentMaintenanceType,
+  EquipmentStatus,
   GarageStatus,
   PaymentMethod,
   PaymentStatus,
   PrismaClient,
   ServiceBadge,
+  TechnicianSkillLevel,
+  TechnicianSpecialty,
   UserStatus,
   VehicleBodyType,
 } from "@prisma/client";
@@ -31,6 +36,16 @@ async function seedRolesAndUsers() {
       code: "admin",
       name: "Quản trị viên hệ thống",
       description: "Toàn quyền quản trị nền tảng AUTORA",
+    },
+    {
+      code: "ops_staff",
+      name: "Cố vấn dịch vụ (SA)",
+      description: "Tiếp nhận xe, điều phối cầu nâng, lập báo giá và thu ngân",
+    },
+    {
+      code: "technician",
+      name: "Kỹ thuật viên (KTV)",
+      description: "Thực hiện sửa chữa, kiểm tra DVI và mượn dụng cụ chuyên dụng",
     },
   ];
 
@@ -856,6 +871,237 @@ async function main(): Promise<void> {
         isOptional: false,
       },
     });
+  }
+
+  // ── Phase 3: Staff/Technicians & Workshop Equipment / Special Tools ────
+  const techRole = await prisma.role.findUniqueOrThrow({ where: { code: "technician" } });
+  const opsRole = await prisma.role.findUniqueOrThrow({ where: { code: "ops_staff" } });
+  const staffPassHash = await hashPassword("AutoraStaff@2026");
+
+  const staffSeeds = [
+    {
+      email: "ktv.tuan@autora.vn",
+      fullName: "Nguyễn Minh Tuấn (KTV Trưởng)",
+      phone: "0903111222",
+      roleId: techRole.id,
+      tech: {
+        specialty: TechnicianSpecialty.CHASSIS_BRAKE,
+        skillLevel: TechnicianSkillLevel.MASTER,
+        laborCommissionPct: 18,
+        hourlyRateVnd: 120000,
+      },
+    },
+    {
+      email: "ktv.minh@autora.vn",
+      fullName: "Trần Quốc Minh (KTV Chẩn đoán)",
+      phone: "0903111333",
+      roleId: techRole.id,
+      tech: {
+        specialty: TechnicianSpecialty.ELECTRICAL,
+        skillLevel: TechnicianSkillLevel.SENIOR,
+        laborCommissionPct: 15,
+        hourlyRateVnd: 95000,
+      },
+    },
+    {
+      email: "sa.lan@autora.vn",
+      fullName: "Lê Thị Ngọc Lan (Cố vấn dịch vụ)",
+      phone: "0903111444",
+      roleId: opsRole.id,
+      tech: null,
+    },
+  ];
+
+  const firstSeededGarage = await prisma.garage.findFirst({
+    orderBy: { createdAt: "asc" },
+    select: { id: true },
+  });
+  const primaryGarageId = firstSeededGarage?.id ?? null;
+  let tuanUserId: string | null = null;
+
+  for (const s of staffSeeds) {
+    const user = await prisma.user.upsert({
+      where: { email: s.email },
+      update: { fullName: s.fullName, status: UserStatus.ACTIVE },
+      create: {
+        id: generateUuidV7(),
+        email: s.email,
+        phone: s.phone,
+        passwordHash: staffPassHash,
+        fullName: s.fullName,
+        status: UserStatus.ACTIVE,
+      },
+    });
+    if (s.email === "ktv.tuan@autora.vn") tuanUserId = user.id;
+
+    await prisma.userRole.upsert({
+      where: { userId_roleId: { userId: user.id, roleId: s.roleId } },
+      update: {},
+      create: { userId: user.id, roleId: s.roleId },
+    });
+
+    if (s.tech) {
+      await prisma.technicianProfile.upsert({
+        where: { userId: user.id },
+        update: {
+          primaryGarageId,
+          specialty: s.tech.specialty,
+          skillLevel: s.tech.skillLevel,
+          laborCommissionPct: s.tech.laborCommissionPct,
+          hourlyRateVnd: s.tech.hourlyRateVnd,
+          isActive: true,
+        },
+        create: {
+          userId: user.id,
+          primaryGarageId,
+          specialty: s.tech.specialty,
+          skillLevel: s.tech.skillLevel,
+          laborCommissionPct: s.tech.laborCommissionPct,
+          hourlyRateVnd: s.tech.hourlyRateVnd,
+          isActive: true,
+        },
+      });
+    }
+  }
+
+  if (tuanUserId) {
+    const completedBooking = await prisma.booking.findFirst({
+      where: { status: BookingStatus.COMPLETED, assignedTechnicianId: null },
+    });
+    if (completedBooking) {
+      await prisma.booking.update({
+        where: { id: completedBooking.id },
+        data: { assignedTechnicianId: tuanUserId },
+      });
+    }
+  }
+
+  if (primaryGarageId) {
+    const firstBay = await prisma.serviceBay.findFirst({
+      where: { garageId: primaryGarageId },
+      orderBy: { sortOrder: "asc" },
+    });
+    const inThreeDays = new Date(Date.now() + 3 * 86_400_000);
+    const inFiveDays = new Date(Date.now() + 5 * 86_400_000);
+    const inSixtyDays = new Date(Date.now() + 60 * 86_400_000);
+
+    const equipSeeds = [
+      {
+        assetCode: "EQ-LIFT-01",
+        name: "Cầu nâng 2 trụ BendPak XPR-10AS (4.5 Tấn)",
+        category: EquipmentCategory.LIFT,
+        brandModel: "BendPak XPR-10AS",
+        serialNumber: "BP-2025-8812",
+        status: EquipmentStatus.OPERATIONAL,
+        serviceBayId: firstBay?.id ?? null,
+        purchaseCostVnd: 115000000,
+        nextMaintenanceAt: inSixtyDays,
+        calibrationDueAt: null,
+      },
+      {
+        assetCode: "EQ-SCAN-01",
+        name: "Máy chẩn đoán lỗi Autel MaxiSys Ultra",
+        category: EquipmentCategory.DIAGNOSTIC_SCANNER,
+        brandModel: "Autel MaxiSys Ultra",
+        serialNumber: "AUT-994021",
+        status: EquipmentStatus.OPERATIONAL,
+        serviceBayId: null,
+        purchaseCostVnd: 86000000,
+        nextMaintenanceAt: null,
+        calibrationDueAt: inThreeDays,
+      },
+      {
+        assetCode: "EQ-ALIGN-01",
+        name: "Hệ thống cân chỉnh thước lái 3D Hunter",
+        category: EquipmentCategory.WHEEL_ALIGNMENT,
+        brandModel: "Hunter HawkEye Elite",
+        serialNumber: "HNT-33104",
+        status: EquipmentStatus.OPERATIONAL,
+        serviceBayId: null,
+        purchaseCostVnd: 420000000,
+        nextMaintenanceAt: inFiveDays,
+        calibrationDueAt: inFiveDays,
+      },
+      {
+        assetCode: "EQ-AC-01",
+        name: "Máy thu hồi & nạp gas điều hòa Robinair",
+        category: EquipmentCategory.AC_MACHINE,
+        brandModel: "Robinair AC1234-6",
+        serialNumber: "ROB-7721",
+        status: EquipmentStatus.OPERATIONAL,
+        serviceBayId: null,
+        purchaseCostVnd: 74000000,
+        nextMaintenanceAt: inSixtyDays,
+        calibrationDueAt: null,
+      },
+      {
+        assetCode: "TL-TORQ-01",
+        name: "Cần siết lực điện tử Snap-on TechAngle 1/2\"",
+        category: EquipmentCategory.SPECIAL_TOOL,
+        brandModel: "Snap-on ATECH3FR250B",
+        serialNumber: "SNP-44910",
+        status: EquipmentStatus.IN_USE,
+        serviceBayId: null,
+        purchaseCostVnd: 18500000,
+        nextMaintenanceAt: null,
+        calibrationDueAt: inSixtyDays,
+      },
+    ];
+
+    for (const eq of equipSeeds) {
+      await prisma.workshopEquipment.upsert({
+        where: { assetCode: eq.assetCode },
+        update: {},
+        create: {
+          id: generateUuidV7(),
+          garageId: primaryGarageId,
+          ...eq,
+        },
+      });
+    }
+
+    const scanEq = await prisma.workshopEquipment.findUnique({
+      where: { assetCode: "EQ-SCAN-01" },
+    });
+    if (scanEq) {
+      const existingMaint = await prisma.equipmentMaintenanceLog.count({
+        where: { equipmentId: scanEq.id },
+      });
+      if (existingMaint === 0) {
+        await prisma.equipmentMaintenanceLog.create({
+          data: {
+            id: generateUuidV7(),
+            equipmentId: scanEq.id,
+            maintenanceType: EquipmentMaintenanceType.CALIBRATION,
+            costVnd: 1500000,
+            vendorName: "Autel Việt Nam",
+            nextDueAt: inThreeDays,
+            notes: "Cập nhật phần mềm chẩn đoán OEM 2026 & hiệu chuẩn đầu đo",
+            recordedByEmail: "admin@autora.vn",
+          },
+        });
+      }
+    }
+
+    const torqueTool = await prisma.workshopEquipment.findUnique({
+      where: { assetCode: "TL-TORQ-01" },
+    });
+    if (torqueTool && tuanUserId) {
+      const activeCheckout = await prisma.toolCheckoutLog.findFirst({
+        where: { equipmentId: torqueTool.id, returnedAt: null },
+      });
+      if (!activeCheckout) {
+        await prisma.toolCheckoutLog.create({
+          data: {
+            id: generateUuidV7(),
+            equipmentId: torqueTool.id,
+            technicianUserId: tuanUserId,
+            expectedReturnAt: new Date(Date.now() + 4 * 3_600_000),
+            notes: "Siết lực ốc bánh xe & cụm phanh trước",
+          },
+        });
+      }
+    }
   }
 
   console.log("[Seed] AUTORA database seeded successfully (Admin: admin@autora.vn / AutoraAdmin@2026).");

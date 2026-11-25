@@ -58,6 +58,7 @@ export class GetDashboardOverviewUseCase {
       registeredCustomers,
       paidAggregate,
       unpaidCompletedAggregate,
+      equipmentDueSoonCount,
       recentBookingsRows,
     ] = await Promise.all([
       db.booking.groupBy({
@@ -90,6 +91,14 @@ export class GetDashboardOverviewUseCase {
         },
         _sum: { totalVnd: true },
         _count: { _all: true },
+      }),
+      db.workshopEquipment.count({
+        where: {
+          OR: [
+            { nextMaintenanceAt: { lte: new Date(Date.now() + 7 * 86_400_000) } },
+            { calibrationDueAt: { lte: new Date(Date.now() + 7 * 86_400_000) } },
+          ],
+        },
       }),
       db.booking.findMany({
         orderBy: { createdAt: "desc" },
@@ -156,6 +165,18 @@ export class GetDashboardOverviewUseCase {
           "Cần đối soát thanh toán tại xưởng hoặc hóa đơn với đối tác garage.",
         href: "/bookings?status=COMPLETED",
         count: unpaidCompletedAggregate._count._all,
+      });
+    }
+
+    if (equipmentDueSoonCount > 0) {
+      alerts.push({
+        id: "equipment-due-soon",
+        severity: "warning",
+        title: `${equipmentDueSoonCount} thiết bị sắp đến hạn bảo trì / hiệu chuẩn (7 ngày)`,
+        description:
+          "Cần lên lịch hiệu chuẩn hoặc bảo trì định kỳ để tránh gián đoạn cầu nâng.",
+        href: "/equipment",
+        count: equipmentDueSoonCount,
       });
     }
 
