@@ -11,7 +11,7 @@ services:
       POSTGRES_DB: autora_db
       TZ: Asia/Ho_Chi_Minh
     ports:
-      - "5433:5432"
+      - "${POSTGRES_PORT:-5433}:5432"
     volumes:
       - autora_pg_data:/var/lib/postgresql/data
       - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -32,7 +32,7 @@ services:
       --maxmemory 256mb
       --maxmemory-policy noeviction
     ports:
-      - "6380:6379"
+      - "${REDIS_PORT:-6380}:6379"
     volumes:
       - autora_redis_data:/data
     healthcheck:

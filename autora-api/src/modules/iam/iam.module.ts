@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common";
+import { Global, Module } from "@nestjs/common";
 import { JwtModule } from "@nestjs/jwt";
 import { PoliciesGuard } from "@core/guards/policies.guard";
 import { CaslAbilityFactory } from "./application/casl/casl-ability.factory";
@@ -15,6 +15,7 @@ import { PrismaRefreshTokenRepository } from "./infrastructure/prisma-refresh-to
 import { PrismaUserRepository } from "./infrastructure/prisma-user.repository";
 import { AuthController } from "./presentation/auth.controller";
 
+@Global()
 @Module({
   imports: [JwtModule.register({})],
   controllers: [AuthController],

@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+:root {
+  --bg-canvas: #F8FAFC;
+  --bg-surface: #FFFFFF;
+  --bg-surface-subtle: #F1F5F9;
+
+  --ink-primary: #0F172A;
+  --ink-secondary: #475569;
+  --ink-muted: #64748B;
+
+  --brand-primary: #0056B3;
+  --brand-primary-hover: #004494;
+  --brand-soft: #EBF4FF;
+
+  --accent-signal: #E85A24;
+  --accent-signal-hover: #D04917;
+
+  --border-hairline: #E2E8F0;
+  --border-strong: #CBD5E1;
+}
+
+@theme inline {
+  --color-canvas: var(--bg-canvas);
+  --color-surface: var(--bg-surface);
+  --color-surface-subtle: var(--bg-surface-subtle);
+  --color-ink: var(--ink-primary);
+  --color-ink-secondary: var(--ink-secondary);
+  --color-ink-muted: var(--ink-muted);
+  --color-brand: var(--brand-primary);
+  --color-brand-hover: var(--brand-primary-hover);
+  --color-brand-soft: var(--brand-soft);
+  --color-accent: var(--accent-signal);
+  --color-accent-hover: var(--accent-signal-hover);
+  --color-line: var(--border-hairline);
+  --color-line-strong: var(--border-strong);
+  --font-sans: var(--font-be-vietnam-pro), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+}
+
+html,
+body {
+  background-color: var(--bg-canvas);
+  color: var(--ink-primary);
+  font-family: var(--font-be-vietnam-pro), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+

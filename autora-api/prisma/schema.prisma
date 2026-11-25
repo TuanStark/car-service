@@ -63,6 +63,12 @@ enum CouponDiscountType {
   FIXED_VND
 }
 
+enum GarageStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
 // ==============================================================================
 // IAM & AUDIT MODELS
 // ==============================================================================
@@ -231,6 +237,7 @@ model ServiceProduct {
   includedSteps         String[]          @default([]) @map("included_steps")
   specificationsJson    Json              @default("[]") @map("specifications_json")
   isFeatured            Boolean           @default(false) @map("is_featured")
+  isActive              Boolean           @default(true) @map("is_active")
   createdAt             DateTime          @default(now()) @map("created_at")
   updatedAt             DateTime          @updatedAt @map("updated_at")
   deletedAt             DateTime?         @map("deleted_at")
@@ -241,6 +248,7 @@ model ServiceProduct {
   reviews        Review[]
 
   @@index([categoryId, deletedAt])
+  @@index([isActive, categoryId, deletedAt])
   @@index([priceVnd, deletedAt])
   @@index([isFeatured, bookedCount])
   @@map("service_products")
@@ -256,19 +264,20 @@ model Garage {
   cityLabel        String    @map("city_label") @db.VarChar(80)
   fullAddress      String    @map("full_address") @db.VarChar(350)
   phone            String?   @db.VarChar(20)
-  ratingAvg        Decimal   @default(5.0) @map("rating_avg") @db.Decimal(3, 2)
-  reviewCount      Int       @default(0) @map("review_count")
-  verified         Boolean   @default(false)
-  isFeatured       Boolean   @default(false) @map("is_featured")
-  coverImageUrl    String    @map("cover_image_url") @db.VarChar(500)
-  openHours        String    @map("open_hours") @db.VarChar(80)
-  bayCount         Int       @default(4) @map("bay_count")
-  startingPriceVnd Int       @map("starting_price_vnd")
-  certifications   String[]  @default([])
-  summary          String    @db.Text
-  createdAt        DateTime  @default(now()) @map("created_at")
-  updatedAt        DateTime  @updatedAt @map("updated_at")
-  deletedAt        DateTime? @map("deleted_at")
+  ratingAvg        Decimal      @default(5.0) @map("rating_avg") @db.Decimal(3, 2)
+  reviewCount      Int          @default(0) @map("review_count")
+  verified         Boolean      @default(false)
+  status           GarageStatus @default(ACTIVE)
+  isFeatured       Boolean      @default(false) @map("is_featured")
+  coverImageUrl    String       @map("cover_image_url") @db.VarChar(500)
+  openHours        String       @map("open_hours") @db.VarChar(80)
+  bayCount         Int          @default(4) @map("bay_count")
+  startingPriceVnd Int          @map("starting_price_vnd")
+  certifications   String[]     @default([])
+  summary          String       @db.Text
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
+  deletedAt        DateTime?    @map("deleted_at")
 
   owner          User?           @relation("GarageOwner", fields: [ownerUserId], references: [id])
   garageServices GarageService[]
@@ -276,6 +285,7 @@ model Garage {
   reviews        Review[]
 
   @@index([cityCode, verified, deletedAt])
+  @@index([status, cityCode, deletedAt])
   @@index([isFeatured, ratingAvg])
   @@map("garages")
 }
@@ -365,20 +375,40 @@ model Booking {
   discountVnd     Int           @default(0) @map("discount_vnd")
   totalVnd        Int           @map("total_vnd")
   notes           String?       @db.Text
+  version         Int           @default(1)
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
   deletedAt       DateTime?     @map("deleted_at")
 
-  user    User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
-  garage  Garage           @relation(fields: [garageId], references: [id])
-  vehicle CustomerVehicle? @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
-  coupon  Coupon?          @relation(fields: [couponId], references: [id], onDelete: SetNull)
-  items   BookingItem[]
+  user          User?                  @relation(fields: [userId], references: [id], onDelete: SetNull)
+  garage        Garage                 @relation(fields: [garageId], references: [id])
+  vehicle       CustomerVehicle?       @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+  coupon        Coupon?                @relation(fields: [couponId], references: [id], onDelete: SetNull)
+  items         BookingItem[]
+  statusHistory BookingStatusHistory[]
 
   @@index([userId, createdAt])
   @@index([garageId, appointmentDate, appointmentTime, status])
   @@index([status, deletedAt])
+  @@index([appointmentDate, status, deletedAt])
+  @@index([paymentStatus, deletedAt])
   @@map("bookings")
+}
+
+model BookingStatusHistory {
+  id              String         @id @default(uuid()) @db.Uuid
+  bookingId       String         @map("booking_id") @db.Uuid
+  fromStatus      BookingStatus? @map("from_status")
+  toStatus        BookingStatus  @map("to_status")
+  reason          String?        @db.VarChar(500)
+  changedByUserId String?        @map("changed_by_user_id") @db.Uuid
+  changedByEmail  String?        @map("changed_by_email") @db.VarChar(255)
+  createdAt       DateTime       @default(now()) @map("created_at")
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId, createdAt])
+  @@map("booking_status_histories")
 }
 
 model BookingItem {

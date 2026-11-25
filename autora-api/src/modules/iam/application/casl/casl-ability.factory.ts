@@ -10,7 +10,9 @@ export type Action = "manage" | "create" | "read" | "update" | "delete";
 
 export type Subjects =
   | "all"
+  | "Dashboard"
   | "User"
+  | "Customer"
   | "Vehicle"
   | "Booking"
   | "Garage"

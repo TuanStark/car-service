@@ -32,6 +32,7 @@ describe("ListServicesUseCase", () => {
       includedSteps: ["Xả nhớt cũ"],
       specifications: [{ label: "Cấp nhớt", value: "5W-30" }],
       isFeatured: true,
+      isActive: true,
     });
 
     const repo: IServiceProductRepository = {
@@ -47,6 +48,13 @@ describe("ListServicesUseCase", () => {
         },
       }),
       findBySlug: vi.fn(),
+      findManyAdmin: vi.fn(),
+      findById: vi.fn(),
+      listCategories: vi.fn(),
+      categoryExists: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      setActive: vi.fn(),
     };
 
     const redis = {

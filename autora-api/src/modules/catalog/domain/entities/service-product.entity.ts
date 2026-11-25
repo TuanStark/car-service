@@ -33,6 +33,7 @@ export interface ServiceProductProps {
   includedSteps: readonly string[];
   specifications: readonly ServiceSpecification[];
   isFeatured: boolean;
+  isActive: boolean;
 }
 
 export class ServiceProductEntity extends BaseEntity<ServiceProductProps> {

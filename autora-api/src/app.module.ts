@@ -19,7 +19,11 @@ import { PrismaModule } from "@infra/prisma/prisma.module";
 import { QueueModule } from "@infra/queue/bullmq.module";
 import { RedisModule } from "@infra/redis/redis.module";
 import { AuditModule } from "@modules/audit/audit.module";
+import { BookingsModule } from "@modules/bookings/bookings.module";
 import { CatalogModule } from "@modules/catalog/catalog.module";
+import { CustomersModule } from "@modules/customers/customers.module";
+import { DashboardModule } from "@modules/dashboard/dashboard.module";
+import { GaragesModule } from "@modules/garages/garages.module";
 import { IamModule } from "@modules/iam/iam.module";
 
 @Module({
@@ -48,6 +52,10 @@ import { IamModule } from "@modules/iam/iam.module";
     HealthModule,
     IamModule,
     CatalogModule,
+    BookingsModule,
+    GaragesModule,
+    CustomersModule,
+    DashboardModule,
     AuditModule,
   ],
   providers: [

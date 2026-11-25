@@ -9,6 +9,7 @@ Không gian làm việc tổng hợp (Multi-Project Workspace) chứa toàn bộ
 | Thư mục | Tên gói / Vai trò | Công nghệ chính | Cổng mặc định |
 | :--- | :--- | :--- | :--- |
 | [`autora-web/`](./autora-web) | Website TMĐT Dịch vụ Ô tô **AUTORA** (Storefront, Tìm Garage, Giỏ dịch vụ, Đặt lịch, Sổ bảo dưỡng) | Next.js 16, React 19, TypeScript, Tailwind CSS v4 | `:3000` |
+| [`autora-admin/`](./autora-admin) | **Admin Dashboard Vận hành AUTORA** (Tổng quan KPI, Lịch hẹn, Garage, Dịch vụ & Bảng giá, Khách hàng, Nhật ký) | Next.js 16, React 19, TypeScript, TanStack Query, Tailwind CSS v4 | `:3001` |
 | [`autora-api/`](./autora-api) | **Core Business Backend** (IAM, CASL RBAC/ABAC, Catalog, Garages, Bookings, Audit, Observability) | NestJS 11, Fastify 5, Prisma 6, PostgreSQL, Redis, BullMQ | `:4000` |
 | [`agent-api/`](./agent-api) | **AI Agent Platform Backend** (Multi-tenant, Multi-LLM Router, RBAC-aware RAG, SSE, Guardrails) | NestJS 11, Fastify 5, Prisma 6 (pgvector), Zod, Redis | `:4100` |
 | [`agent-sdk/`](./agent-sdk) | `@autora/agent-sdk` — Client & UI Co-Browsing SDK kết nối `autora-web` với `agent-api` | TypeScript, React 18/19 (`AgentWidget`, `UiChoreographer`) | Package nội bộ (`file:../agent-sdk`) |
@@ -97,6 +98,17 @@ pnpm dev
 
 Truy cập website tại `http://localhost:3000`.
 
+### 3.5. Chạy `autora-admin` (Admin Dashboard — `:3001`)
+
+```bash
+cd autora-admin
+pnpm install
+cp .env.example .env.local
+pnpm dev
+```
+
+Truy cập trang quản trị tại `http://localhost:3001` (tài khoản Admin dev từ seed: `admin@autora.vn` / `AutoraAdmin@2026`).
+
 ---
 
 ## 4. Lệnh kiểm thử & Kiểm tra chất lượng
@@ -107,6 +119,7 @@ Truy cập website tại `http://localhost:3000`.
 | **`agent-api`** | `pnpm typecheck && pnpm lint && pnpm test && pnpm build` |
 | **`agent-sdk`** | `pnpm typecheck && pnpm test && pnpm build` |
 | **`autora-web`** | `pnpm lint && pnpm build` |
+| **`autora-admin`** | `pnpm typecheck && pnpm lint && pnpm build` |
 
 ---
 
