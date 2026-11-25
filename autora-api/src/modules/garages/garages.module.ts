@@ -1,5 +1,9 @@
 import { Module } from "@nestjs/common";
 import { CreateGarageUseCase } from "./application/use-cases/create-garage.use-case";
+import {
+  ManageGarageBaysUseCase,
+  SyncGarageServicesUseCase,
+} from "./application/use-cases/garage-operations.use-cases";
 import { GetAdminGarageDetailsUseCase } from "./application/use-cases/get-admin-garage-details.use-case";
 import { GetAdminGarageListUseCase } from "./application/use-cases/get-admin-garage-list.use-case";
 import {
@@ -18,6 +22,8 @@ import { AdminGaragesController } from "./presentation/admin-garages.controller"
     CreateGarageUseCase,
     UpdateGarageUseCase,
     UpdateGarageStatusUseCase,
+    ManageGarageBaysUseCase,
+    SyncGarageServicesUseCase,
     {
       provide: GARAGE_REPOSITORY,
       useClass: PrismaGarageRepository,

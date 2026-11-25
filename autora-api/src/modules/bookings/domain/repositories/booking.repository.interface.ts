@@ -24,12 +24,41 @@ export interface BookingListItemDto {
   readonly licensePlate: string;
   readonly garageId: string;
   readonly garageName: string;
+  readonly bayId: string | null;
+  readonly bayName: string | null;
   readonly status: BookingStatusValue;
   readonly paymentMethod: string;
   readonly paymentStatus: string;
   readonly totalVnd: number;
   readonly version: number;
   readonly itemCount: number;
+  readonly createdAt: string;
+}
+
+export interface BookingInspectionDto {
+  readonly id: string;
+  readonly phase: "CHECK_IN" | "CHECK_OUT";
+  readonly odoKm: number | null;
+  readonly fuelLevel: string | null;
+  readonly checklist: readonly {
+    readonly label: string;
+    readonly status: "OK" | "ATTENTION" | "REPLACE";
+    readonly note?: string;
+  }[];
+  readonly photoUrls: readonly string[];
+  readonly notes: string | null;
+  readonly inspectedByEmail: string | null;
+  readonly createdAt: string;
+}
+
+export interface BookingPaymentLogDto {
+  readonly id: string;
+  readonly action: "CAPTURE" | "REFUND";
+  readonly method: string;
+  readonly amountVnd: number;
+  readonly referenceCode: string | null;
+  readonly reason: string | null;
+  readonly recordedByEmail: string | null;
   readonly createdAt: string;
 }
 
@@ -45,6 +74,9 @@ export interface BookingDetailDto {
   readonly garageId: string;
   readonly garageName: string;
   readonly garageAddress: string;
+  readonly bayId: string | null;
+  readonly bayCode: string | null;
+  readonly bayName: string | null;
   readonly vehicleId: string | null;
   readonly vehicleLabel: string;
   readonly licensePlate: string;
@@ -52,11 +84,16 @@ export interface BookingDetailDto {
   readonly paymentMethod: string;
   readonly paymentStatus: string;
   readonly status: BookingStatusValue;
+  readonly customerApprovalStatus: "NONE" | "PENDING" | "APPROVED" | "REJECTED";
   readonly allowedNextStatuses: readonly BookingStatusValue[];
   readonly subtotalVnd: number;
   readonly discountVnd: number;
   readonly totalVnd: number;
   readonly notes: string | null;
+  readonly checkedInAt: string | null;
+  readonly workStartedAt: string | null;
+  readonly workCompletedAt: string | null;
+  readonly rescheduleCount: number;
   readonly version: number;
   readonly createdAt: string;
   readonly updatedAt: string;
@@ -77,6 +114,8 @@ export interface BookingDetailDto {
     readonly changedByEmail: string | null;
     readonly createdAt: string;
   }[];
+  readonly inspections: readonly BookingInspectionDto[];
+  readonly paymentLogs: readonly BookingPaymentLogDto[];
 }
 
 export interface TransitionBookingStatusParams {
@@ -100,4 +139,3 @@ export interface IBookingRepository {
     params: TransitionBookingStatusParams
   ): Promise<boolean>;
 }
-

@@ -666,6 +666,31 @@ async function main(): Promise<void> {
     serviceBySlug,
     garageBySlug,
   });
+  const bayTemplates = [
+    { code: "BAY-01", name: "Cầu nhanh 01 (Bảo dưỡng)", bayType: "QUICK_SERVICE" as const, sortOrder: 1 },
+    { code: "BAY-02", name: "Cầu 2 trụ 02 (Gầm & Máy)", bayType: "TWO_POST" as const, sortOrder: 2 },
+    { code: "BAY-03", name: "Cầu cân chỉnh 3D Hunter", bayType: "ALIGNMENT_3D" as const, sortOrder: 3 },
+    { code: "BAY-04", name: "Khoang Detailing & Phủ Ceramic", bayType: "DETAILING" as const, sortOrder: 4 },
+  ];
+
+  for (const garage of garageBySlug.values()) {
+    for (const tpl of bayTemplates) {
+      await prisma.serviceBay.upsert({
+        where: { garageId_code: { garageId: garage.id, code: tpl.code } },
+        update: {},
+        create: {
+          id: generateUuidV7(),
+          garageId: garage.id,
+          code: tpl.code,
+          name: tpl.name,
+          bayType: tpl.bayType,
+          status: "AVAILABLE",
+          sortOrder: tpl.sortOrder,
+        },
+      });
+    }
+  }
+
   console.log("[Seed] AUTORA database seeded successfully (Admin: admin@autora.vn / AutoraAdmin@2026).");
 }
 

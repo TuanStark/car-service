@@ -43,9 +43,14 @@ export function StatusPill({
 const BOOKING_STATUS_META: Record<string, { label: string; tone: BadgeTone }> = {
   PENDING_CONFIRMATION: { label: "Chờ xác nhận", tone: "warning" },
   CONFIRMED: { label: "Đã xác nhận", tone: "info" },
+  CHECKED_IN: { label: "Đã tiếp nhận xe", tone: "brand" },
   IN_PROGRESS: { label: "Đang thực hiện", tone: "brand" },
+  WAITING_APPROVAL: { label: "Chờ duyệt phát sinh", tone: "warning" },
+  QC_PENDING: { label: "Đang kiểm tra QC", tone: "info" },
+  READY_FOR_PICKUP: { label: "Sẵn sàng giao xe", tone: "success" },
   COMPLETED: { label: "Hoàn tất", tone: "success" },
   CANCELLED: { label: "Đã hủy", tone: "danger" },
+  NO_SHOW: { label: "Khách không đến", tone: "neutral" },
 };
 
 const PAYMENT_STATUS_META: Record<string, { label: string; tone: BadgeTone }> = {

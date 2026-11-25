@@ -26,6 +26,10 @@ import {
   updateAdminGarage,
   updateAdminGarageStatus,
 } from "../api";
+import {
+  GarageBaysCard,
+  GarageServiceMatrixCard,
+} from "./garage-operations-panels";
 
 const CITY_LABELS: Record<GarageCityCode, string> = {
   HCM: "TP. Hồ Chí Minh",
@@ -382,43 +386,11 @@ function GarageDetailContent({
           </form>
         </Card>
 
-        {/* Right: Offered Services & Related Bookings */}
+        {/* Right: Bays, Service Matrix & Related Bookings */}
         <div className="space-y-6 lg:col-span-6">
-          <Card>
-            <CardHeader
-              title="Dịch vụ cung cấp tại garage"
-              description={`${data.offeredServices.length} gói đang liên kết`}
-            />
-            <div className="divide-y divide-line">
-              {data.offeredServices.length === 0 ? (
-                <p className="p-5 text-xs text-ink-muted">
-                  Chưa có gói dịch vụ nào được gán cho garage này.
-                </p>
-              ) : (
-                data.offeredServices.map((srv) => (
-                  <div
-                    key={srv.serviceProductId}
-                    className="flex items-center justify-between gap-3 px-5 py-3 text-xs"
-                  >
-                    <div>
-                      <Link
-                        href={`/services/${srv.serviceProductId}`}
-                        className="font-semibold text-ink hover:text-brand"
-                      >
-                        {srv.name}
-                      </Link>
-                      <span className="block text-[11px] text-ink-muted">
-                        {srv.sku} • {srv.categoryTitle}
-                      </span>
-                    </div>
-                    <strong className="shrink-0 font-semibold text-brand tabular-nums">
-                      {formatVnd(srv.customPriceVnd ?? srv.basePriceVnd)}
-                    </strong>
-                  </div>
-                ))
-              )}
-            </div>
-          </Card>
+          <GarageBaysCard garage={data} />
+
+          <GarageServiceMatrixCard garage={data} />
 
           <Card>
             <CardHeader title="Lịch hẹn gần đây tại garage" />

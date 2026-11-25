@@ -10,6 +10,7 @@ import {
 } from "../domain/booking-status-machine";
 import type {
   BookingDetailDto,
+  BookingInspectionDto,
   BookingListFilterCriteria,
   BookingListItemDto,
   IBookingRepository,
@@ -96,6 +97,7 @@ export class PrismaBookingRepository
         take: criteria.limit,
         include: {
           garage: { select: { id: true, name: true } },
+          bay: { select: { id: true, name: true } },
           _count: { select: { items: true } },
         },
       }),
@@ -112,6 +114,8 @@ export class PrismaBookingRepository
       licensePlate: row.licensePlate,
       garageId: row.garage.id,
       garageName: row.garage.name,
+      bayId: row.bay?.id ?? null,
+      bayName: row.bay?.name ?? null,
       status: row.status as BookingStatusValue,
       paymentMethod: row.paymentMethod,
       paymentStatus: row.paymentStatus,
@@ -135,8 +139,11 @@ export class PrismaBookingRepository
       include: {
         user: { select: { id: true, email: true } },
         garage: { select: { id: true, name: true, fullAddress: true } },
+        bay: { select: { id: true, code: true, name: true } },
         items: true,
         statusHistory: { orderBy: { createdAt: "desc" } },
+        inspections: { orderBy: { createdAt: "desc" } },
+        paymentLogs: { orderBy: { createdAt: "desc" } },
       },
     });
 
@@ -156,6 +163,9 @@ export class PrismaBookingRepository
       garageId: row.garage.id,
       garageName: row.garage.name,
       garageAddress: row.garage.fullAddress,
+      bayId: row.bay?.id ?? null,
+      bayCode: row.bay?.code ?? null,
+      bayName: row.bay?.name ?? null,
       vehicleId: row.vehicleId,
       vehicleLabel: row.vehicleLabel,
       licensePlate: row.licensePlate,
@@ -163,11 +173,16 @@ export class PrismaBookingRepository
       paymentMethod: row.paymentMethod,
       paymentStatus: row.paymentStatus,
       status: currentStatus,
+      customerApprovalStatus: row.customerApprovalStatus,
       allowedNextStatuses: getAllowedNextBookingStatuses(currentStatus),
       subtotalVnd: row.subtotalVnd,
       discountVnd: row.discountVnd,
       totalVnd: row.totalVnd,
       notes: row.notes,
+      checkedInAt: row.checkedInAt?.toISOString() ?? null,
+      workStartedAt: row.workStartedAt?.toISOString() ?? null,
+      workCompletedAt: row.workCompletedAt?.toISOString() ?? null,
+      rescheduleCount: row.rescheduleCount,
       version: row.version,
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),
@@ -188,6 +203,29 @@ export class PrismaBookingRepository
         changedByEmail: h.changedByEmail,
         createdAt: h.createdAt.toISOString(),
       })),
+      inspections: row.inspections.map((ins) => ({
+        id: ins.id,
+        phase: ins.phase,
+        odoKm: ins.odoKm,
+        fuelLevel: ins.fuelLevel,
+        checklist: Array.isArray(ins.checklistJson)
+          ? (ins.checklistJson as unknown as BookingInspectionDto["checklist"])
+          : [],
+        photoUrls: ins.photoUrls,
+        notes: ins.notes,
+        inspectedByEmail: ins.inspectedByEmail,
+        createdAt: ins.createdAt.toISOString(),
+      })),
+      paymentLogs: row.paymentLogs.map((log) => ({
+        id: log.id,
+        action: log.action,
+        method: log.method,
+        amountVnd: log.amountVnd,
+        referenceCode: log.referenceCode,
+        reason: log.reason,
+        recordedByEmail: log.recordedByEmail,
+        createdAt: log.createdAt.toISOString(),
+      })),
     };
   }
 
@@ -195,6 +233,7 @@ export class PrismaBookingRepository
     params: TransitionBookingStatusParams
   ): Promise<boolean> {
     const client = this.uow.getClient();
+    const now = new Date();
 
     const updated = await client.booking.updateMany({
       where: {
@@ -204,6 +243,13 @@ export class PrismaBookingRepository
       },
       data: {
         status: params.toStatus,
+        ...(params.toStatus === "CHECKED_IN" ? { checkedInAt: now } : {}),
+        ...(params.toStatus === "IN_PROGRESS" ? { workStartedAt: now } : {}),
+        ...(params.toStatus === "COMPLETED" ? { workCompletedAt: now } : {}),
+        ...(params.toStatus === "IN_PROGRESS" &&
+        params.fromStatus === "WAITING_APPROVAL"
+          ? { customerApprovalStatus: "APPROVED" as const }
+          : {}),
         version: { increment: 1 },
       },
     });

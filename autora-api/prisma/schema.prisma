@@ -41,9 +41,44 @@ enum CityCode {
 enum BookingStatus {
   PENDING_CONFIRMATION
   CONFIRMED
+  CHECKED_IN
   IN_PROGRESS
+  WAITING_APPROVAL
+  QC_PENDING
+  READY_FOR_PICKUP
   COMPLETED
   CANCELLED
+  NO_SHOW
+}
+
+enum BayType {
+  QUICK_SERVICE
+  TWO_POST
+  ALIGNMENT_3D
+  DETAILING
+}
+
+enum BayStatus {
+  AVAILABLE
+  OCCUPIED
+  MAINTENANCE
+}
+
+enum InspectionPhase {
+  CHECK_IN
+  CHECK_OUT
+}
+
+enum PaymentLogAction {
+  CAPTURE
+  REFUND
+}
+
+enum CustomerApprovalStatus {
+  NONE
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 enum PaymentMethod {
@@ -280,6 +315,7 @@ model Garage {
   deletedAt        DateTime?    @map("deleted_at")
 
   owner          User?           @relation("GarageOwner", fields: [ownerUserId], references: [id])
+  bays           ServiceBay[]
   garageServices GarageService[]
   bookings       Booking[]
   reviews        Review[]
@@ -288,6 +324,26 @@ model Garage {
   @@index([status, cityCode, deletedAt])
   @@index([isFeatured, ratingAvg])
   @@map("garages")
+}
+
+model ServiceBay {
+  id        String    @id @default(uuid()) @db.Uuid
+  garageId  String    @map("garage_id") @db.Uuid
+  code      String    @db.VarChar(30)
+  name      String    @db.VarChar(120)
+  bayType   BayType   @default(TWO_POST) @map("bay_type")
+  status    BayStatus @default(AVAILABLE)
+  sortOrder Int       @default(0) @map("sort_order")
+  notes     String?   @db.VarChar(255)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  garage   Garage    @relation(fields: [garageId], references: [id], onDelete: Cascade)
+  bookings Booking[]
+
+  @@unique([garageId, code])
+  @@index([garageId, status])
+  @@map("service_bays")
 }
 
 model GarageService {
@@ -357,42 +413,89 @@ model Coupon {
 model Booking {
   id              String        @id @default(uuid()) @db.Uuid
   orderCode       String        @unique @map("order_code") @db.VarChar(32)
-  userId          String?       @map("user_id") @db.Uuid
-  garageId        String        @map("garage_id") @db.Uuid
-  vehicleId       String?       @map("vehicle_id") @db.Uuid
-  couponId        String?       @map("coupon_id") @db.Uuid
-  appointmentDate DateTime      @map("appointment_date") @db.Date
-  appointmentTime String        @map("appointment_time") @db.VarChar(10)
-  customerName    String        @map("customer_name") @db.VarChar(150)
-  customerPhone   String        @map("customer_phone") @db.VarChar(20)
-  vehicleLabel    String        @map("vehicle_label") @db.VarChar(160)
-  licensePlate    String        @map("license_plate") @db.VarChar(24)
-  odoKm           Int           @map("odo_km")
-  paymentMethod   PaymentMethod @default(PAY_AT_GARAGE) @map("payment_method")
-  paymentStatus   PaymentStatus @default(UNPAID) @map("payment_status")
-  status          BookingStatus @default(CONFIRMED)
-  subtotalVnd     Int           @map("subtotal_vnd")
-  discountVnd     Int           @default(0) @map("discount_vnd")
-  totalVnd        Int           @map("total_vnd")
-  notes           String?       @db.Text
-  version         Int           @default(1)
-  createdAt       DateTime      @default(now()) @map("created_at")
-  updatedAt       DateTime      @updatedAt @map("updated_at")
-  deletedAt       DateTime?     @map("deleted_at")
+  userId                 String?                @map("user_id") @db.Uuid
+  garageId               String                 @map("garage_id") @db.Uuid
+  bayId                  String?                @map("bay_id") @db.Uuid
+  vehicleId              String?                @map("vehicle_id") @db.Uuid
+  couponId               String?                @map("coupon_id") @db.Uuid
+  appointmentDate        DateTime               @map("appointment_date") @db.Date
+  appointmentTime        String                 @map("appointment_time") @db.VarChar(10)
+  customerName           String                 @map("customer_name") @db.VarChar(150)
+  customerPhone          String                 @map("customer_phone") @db.VarChar(20)
+  vehicleLabel           String                 @map("vehicle_label") @db.VarChar(160)
+  licensePlate           String                 @map("license_plate") @db.VarChar(24)
+  odoKm                  Int                    @map("odo_km")
+  paymentMethod          PaymentMethod          @default(PAY_AT_GARAGE) @map("payment_method")
+  paymentStatus          PaymentStatus          @default(UNPAID) @map("payment_status")
+  status                 BookingStatus          @default(CONFIRMED)
+  customerApprovalStatus CustomerApprovalStatus @default(NONE) @map("customer_approval_status")
+  subtotalVnd            Int                    @map("subtotal_vnd")
+  discountVnd            Int                    @default(0) @map("discount_vnd")
+  totalVnd               Int                    @map("total_vnd")
+  notes                  String?                @db.Text
+  checkedInAt            DateTime?              @map("checked_in_at")
+  workStartedAt          DateTime?              @map("work_started_at")
+  workCompletedAt        DateTime?              @map("work_completed_at")
+  rescheduleCount        Int                    @default(0) @map("reschedule_count")
+  version                Int                    @default(1)
+  createdAt              DateTime               @default(now()) @map("created_at")
+  updatedAt              DateTime               @updatedAt @map("updated_at")
+  deletedAt              DateTime?              @map("deleted_at")
 
   user          User?                  @relation(fields: [userId], references: [id], onDelete: SetNull)
   garage        Garage                 @relation(fields: [garageId], references: [id])
+  bay           ServiceBay?            @relation(fields: [bayId], references: [id], onDelete: SetNull)
   vehicle       CustomerVehicle?       @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
   coupon        Coupon?                @relation(fields: [couponId], references: [id], onDelete: SetNull)
   items         BookingItem[]
   statusHistory BookingStatusHistory[]
+  inspections   BookingInspection[]
+  paymentLogs   BookingPaymentLog[]
 
   @@index([userId, createdAt])
   @@index([garageId, appointmentDate, appointmentTime, status])
+  @@index([bayId, appointmentDate, appointmentTime])
   @@index([status, deletedAt])
   @@index([appointmentDate, status, deletedAt])
   @@index([paymentStatus, deletedAt])
   @@map("bookings")
+}
+
+model BookingInspection {
+  id                String          @id @default(uuid()) @db.Uuid
+  bookingId         String          @map("booking_id") @db.Uuid
+  phase             InspectionPhase
+  odoKm             Int?            @map("odo_km")
+  fuelLevel         String?         @map("fuel_level") @db.VarChar(20)
+  checklistJson     Json            @default("[]") @map("checklist_json")
+  photoUrls         String[]        @default([]) @map("photo_urls")
+  notes             String?         @db.Text
+  inspectedByUserId String?         @map("inspected_by_user_id") @db.Uuid
+  inspectedByEmail  String?         @map("inspected_by_email") @db.VarChar(255)
+  createdAt         DateTime        @default(now()) @map("created_at")
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId, createdAt])
+  @@map("booking_inspections")
+}
+
+model BookingPaymentLog {
+  id               String           @id @default(uuid()) @db.Uuid
+  bookingId        String           @map("booking_id") @db.Uuid
+  action           PaymentLogAction
+  method           PaymentMethod
+  amountVnd        Int              @map("amount_vnd")
+  referenceCode    String?          @map("reference_code") @db.VarChar(80)
+  reason           String?          @db.VarChar(500)
+  recordedByUserId String?          @map("recorded_by_user_id") @db.Uuid
+  recordedByEmail  String?          @map("recorded_by_email") @db.VarChar(255)
+  createdAt        DateTime         @default(now()) @map("created_at")
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId, createdAt])
+  @@map("booking_payment_logs")
 }
 
 model BookingStatusHistory {

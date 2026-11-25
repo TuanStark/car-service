@@ -7,11 +7,14 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  IsUUID,
   Matches,
   Max,
   MaxLength,
   Min,
   MinLength,
+  ValidateIf,
+  ValidateNested,
 } from "class-validator";
 import type {
   GarageCityCodeValue,
@@ -252,5 +255,98 @@ export class UpdateGarageStatusDto {
   @IsOptional()
   @IsBoolean()
   verified?: boolean;
+}
+
+const BAY_TYPES = [
+  "QUICK_SERVICE",
+  "TWO_POST",
+  "ALIGNMENT_3D",
+  "DETAILING",
+] as const;
+
+const BAY_STATUSES = ["AVAILABLE", "OCCUPIED", "MAINTENANCE"] as const;
+
+export class CreateGarageBayDto {
+  @ApiProperty({ example: "BAY-05" })
+  @IsString()
+  @MinLength(2)
+  @MaxLength(30)
+  @Matches(/^[A-Z0-9-]+$/, {
+    message: "Mã cầu nâng chỉ gồm chữ in hoa, số và dấu gạch ngang.",
+  })
+  code!: string;
+
+  @ApiProperty({ example: "Cầu 2 trụ gầm máy 05" })
+  @IsString()
+  @MinLength(3)
+  @MaxLength(120)
+  name!: string;
+
+  @ApiProperty({ enum: BAY_TYPES })
+  @IsIn(BAY_TYPES)
+  bayType!: (typeof BAY_TYPES)[number];
+
+  @ApiPropertyOptional({ enum: BAY_STATUSES, default: "AVAILABLE" })
+  @IsOptional()
+  @IsIn(BAY_STATUSES)
+  status?: (typeof BAY_STATUSES)[number];
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  notes?: string;
+}
+
+export class UpdateGarageBayDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MinLength(3)
+  @MaxLength(120)
+  name?: string;
+
+  @ApiPropertyOptional({ enum: BAY_TYPES })
+  @IsOptional()
+  @IsIn(BAY_TYPES)
+  bayType?: (typeof BAY_TYPES)[number];
+
+  @ApiPropertyOptional({ enum: BAY_STATUSES })
+  @IsOptional()
+  @IsIn(BAY_STATUSES)
+  status?: (typeof BAY_STATUSES)[number];
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  notes?: string;
+}
+
+export class GarageServiceMatrixItemDto {
+  @ApiProperty()
+  @IsUUID()
+  serviceProductId!: string;
+
+  @ApiPropertyOptional({ nullable: true })
+  @ValidateIf((_, value) => value !== null && value !== undefined)
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1000)
+  customPriceVnd?: number | null;
+
+  @ApiPropertyOptional({ default: true })
+  @IsOptional()
+  @IsBoolean()
+  isAvailable?: boolean;
+}
+
+export class SyncGarageServicesDto {
+  @ApiProperty({ type: [GarageServiceMatrixItemDto] })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => GarageServiceMatrixItemDto)
+  items!: GarageServiceMatrixItemDto[];
 }
 

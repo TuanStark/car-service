@@ -29,11 +29,22 @@ export interface GarageListItem {
   readonly updatedAt: string;
 }
 
+export interface GarageBay {
+  readonly id: string;
+  readonly code: string;
+  readonly name: string;
+  readonly bayType: "QUICK_SERVICE" | "TWO_POST" | "ALIGNMENT_3D" | "DETAILING";
+  readonly status: "AVAILABLE" | "OCCUPIED" | "MAINTENANCE";
+  readonly sortOrder: number;
+  readonly notes: string | null;
+}
+
 export interface GarageDetail extends GarageListItem {
   readonly coverImageUrl: string;
   readonly certifications: readonly string[];
   readonly summary: string;
   readonly createdAt: string;
+  readonly bays: readonly GarageBay[];
   readonly offeredServices: readonly {
     readonly serviceProductId: string;
     readonly sku: string;
@@ -137,6 +148,60 @@ export function updateAdminGarageStatus(
   return apiData<GarageDetail>(`/admin/garages/${id}/status`, {
     method: "PATCH",
     body: payload,
+  });
+}
+
+export function createGarageBay(
+  garageId: string,
+  payload: {
+    code: string;
+    name: string;
+    bayType: GarageBay["bayType"];
+    notes?: string;
+  }
+): Promise<GarageDetail> {
+  return apiData<GarageDetail>(`/admin/garages/${garageId}/bays`, {
+    method: "POST",
+    body: payload,
+  });
+}
+
+export function updateGarageBay(
+  garageId: string,
+  bayId: string,
+  payload: Partial<{
+    name: string;
+    bayType: GarageBay["bayType"];
+    status: GarageBay["status"];
+    notes: string;
+  }>
+): Promise<GarageDetail> {
+  return apiData<GarageDetail>(`/admin/garages/${garageId}/bays/${bayId}`, {
+    method: "PATCH",
+    body: payload,
+  });
+}
+
+export function deleteGarageBay(
+  garageId: string,
+  bayId: string
+): Promise<GarageDetail> {
+  return apiData<GarageDetail>(`/admin/garages/${garageId}/bays/${bayId}`, {
+    method: "DELETE",
+  });
+}
+
+export function syncGarageServices(
+  garageId: string,
+  items: readonly {
+    serviceProductId: string;
+    customPriceVnd?: number | null;
+    isAvailable?: boolean;
+  }[]
+): Promise<GarageDetail> {
+  return apiData<GarageDetail>(`/admin/garages/${garageId}/services`, {
+    method: "PUT",
+    body: { items },
   });
 }
 

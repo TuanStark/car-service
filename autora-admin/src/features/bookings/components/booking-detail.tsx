@@ -10,6 +10,7 @@ import {
   Car,
   CheckCircle2,
   Clock,
+  RefreshCw,
   User,
 } from "lucide-react";
 import { ApiError } from "@/infrastructure/api/api-client";
@@ -22,13 +23,18 @@ import { useToast } from "@/shared/ui/toast-provider";
 import {
   formatViDate,
   formatViDateTime,
-  formatVnd,
 } from "@/shared/utils/format";
 import {
   type BookingStatus,
   fetchAdminBookingDetail,
   updateAdminBookingStatus,
 } from "../api";
+import {
+  PaymentReconciliationCard,
+  RescheduleBookingModal,
+  VehicleInspectionPanel,
+  WorkOrderItemsCard,
+} from "./booking-ro-panels";
 
 const TRANSITION_LABELS: Record<
   BookingStatus,
@@ -45,11 +51,35 @@ const TRANSITION_LABELS: Record<
     description:
       "Xác nhận garage đã tiếp nhận lịch hẹn và bố trí cầu nâng phù hợp.",
   },
+  CHECKED_IN: {
+    label: "Tiếp nhận xe (Check-in)",
+    variant: "primary",
+    description:
+      "Ghi nhận xe đã có mặt tại xưởng và bắt đầu kiểm tra ban đầu.",
+  },
   IN_PROGRESS: {
     label: "Bắt đầu thực hiện",
     variant: "primary",
     description:
-      "Đánh dấu xe đã vào xưởng và kỹ thuật viên đang tiến hành dịch vụ.",
+      "Đánh dấu xe đã lên cầu và kỹ thuật viên đang tiến hành dịch vụ.",
+  },
+  WAITING_APPROVAL: {
+    label: "Chờ khách duyệt phát sinh",
+    variant: "primary",
+    description:
+      "Tạm dừng thi công để khách hàng xác nhận báo giá hạng mục phát sinh.",
+  },
+  QC_PENDING: {
+    label: "Chuyển kiểm tra QC",
+    variant: "primary",
+    description:
+      "Hoàn thành thi công kỹ thuật, chuyển bộ phận QC kiểm tra chất lượng.",
+  },
+  READY_FOR_PICKUP: {
+    label: "Sẵn sàng giao xe",
+    variant: "primary",
+    description:
+      "Xe đã vượt qua kiểm tra QC và sẵn sàng bàn giao cho khách hàng.",
   },
   COMPLETED: {
     label: "Đánh dấu hoàn tất",
@@ -63,6 +93,12 @@ const TRANSITION_LABELS: Record<
     description:
       "Hủy lịch hẹn này trên hệ thống (trạng thái cuối, không thể mở lại). Vui lòng nhập lý do hủy rõ ràng.",
   },
+  NO_SHOW: {
+    label: "Khách không đến",
+    variant: "danger",
+    description:
+      "Đánh dấu khách hàng không mang xe tới theo lịch hẹn (vui lòng nhập ghi chú).",
+  },
 };
 
 export function BookingDetailView({ bookingId }: { readonly bookingId: string }) {
@@ -70,6 +106,7 @@ export function BookingDetailView({ bookingId }: { readonly bookingId: string })
   const { notifySuccess, notifyError } = useToast();
   const [pendingTargetStatus, setPendingTargetStatus] =
     useState<BookingStatus | null>(null);
+  const [rescheduleOpen, setRescheduleOpen] = useState(false);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["admin", "booking", bookingId],
@@ -160,6 +197,16 @@ export function BookingDetailView({ bookingId }: { readonly bookingId: string })
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            {data.allowedNextStatuses.length > 0 && (
+              <Button
+                variant="secondary"
+                size="md"
+                onClick={() => setRescheduleOpen(true)}
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                Điều phối / Gán cầu
+              </Button>
+            )}
             {data.allowedNextStatuses.length === 0 ? (
               <span className="rounded-lg border border-line bg-surface-subtle px-3 py-1.5 text-xs font-medium text-ink-secondary">
                 Đơn đã ở trạng thái kết thúc
@@ -187,49 +234,9 @@ export function BookingDetailView({ bookingId }: { readonly bookingId: string })
       {/* Main Details Grid */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         <div className="space-y-6 lg:col-span-8">
-          {/* Services Breakdown */}
-          <Card>
-            <CardHeader title="Hạng mục dịch vụ đã đặt" />
-            <div className="divide-y divide-line">
-              {data.items.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-start justify-between gap-4 px-5 py-3.5 text-xs sm:text-sm"
-                >
-                  <div>
-                    <strong className="block font-semibold text-ink">
-                      {item.serviceNameSnap}
-                    </strong>
-                    <span className="font-mono text-[11px] text-ink-muted">
-                      SKU: {item.skuSnap} • SL: {item.quantity} ×{" "}
-                      {formatVnd(item.unitPriceVnd)}
-                    </span>
-                  </div>
-                  <strong className="shrink-0 font-semibold text-ink tabular-nums">
-                    {formatVnd(item.lineTotalVnd)}
-                  </strong>
-                </div>
-              ))}
-            </div>
-            <div className="space-y-1.5 border-t border-line bg-surface-subtle/50 px-5 py-4 text-xs sm:text-sm">
-              <div className="flex justify-between text-ink-secondary">
-                <span>Tạm tính</span>
-                <span className="tabular-nums">{formatVnd(data.subtotalVnd)}</span>
-              </div>
-              {data.discountVnd > 0 && (
-                <div className="flex justify-between text-accent">
-                  <span>Giảm giá</span>
-                  <span className="tabular-nums">-{formatVnd(data.discountVnd)}</span>
-                </div>
-              )}
-              <div className="flex justify-between border-t border-line pt-2 font-bold text-ink">
-                <span>Tổng thanh toán</span>
-                <span className="text-base text-brand tabular-nums">
-                  {formatVnd(data.totalVnd)}
-                </span>
-              </div>
-            </div>
-          </Card>
+          <WorkOrderItemsCard booking={data} />
+
+          <VehicleInspectionPanel booking={data} />
 
           {/* Status History Timeline */}
           <Card>
@@ -357,8 +364,16 @@ export function BookingDetailView({ bookingId }: { readonly bookingId: string })
               </div>
             </div>
           </Card>
+
+          <PaymentReconciliationCard booking={data} />
         </div>
       </div>
+
+      <RescheduleBookingModal
+        open={rescheduleOpen}
+        booking={data}
+        onClose={() => setRescheduleOpen(false)}
+      />
 
       {/* Confirmation Dialog for Status Transition */}
       {pendingTargetStatus && (
@@ -368,10 +383,16 @@ export function BookingDetailView({ bookingId }: { readonly bookingId: string })
           description={TRANSITION_LABELS[pendingTargetStatus].description}
           confirmLabel={TRANSITION_LABELS[pendingTargetStatus].label}
           tone={
-            pendingTargetStatus === "CANCELLED" ? "danger" : "primary"
+            pendingTargetStatus === "CANCELLED" ||
+            pendingTargetStatus === "NO_SHOW"
+              ? "danger"
+              : "primary"
           }
-          requireReason={pendingTargetStatus === "CANCELLED"}
-          reasonLabel="Lý do hủy lịch hẹn *"
+          requireReason={
+            pendingTargetStatus === "CANCELLED" ||
+            pendingTargetStatus === "NO_SHOW"
+          }
+          reasonLabel="Lý do thực hiện *"
           reasonPlaceholder="VD: Khách hàng yêu cầu dời lịch sang tuần sau..."
           isPending={statusMutation.isPending}
           onClose={() => setPendingTargetStatus(null)}

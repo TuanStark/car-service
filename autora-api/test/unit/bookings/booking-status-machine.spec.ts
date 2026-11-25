@@ -9,18 +9,29 @@ describe("BookingStatusMachine", () => {
   it("exposes valid next statuses for each lifecycle state", () => {
     expect(getAllowedNextBookingStatuses("PENDING_CONFIRMATION")).toEqual([
       "CONFIRMED",
+      "CHECKED_IN",
       "CANCELLED",
     ]);
     expect(getAllowedNextBookingStatuses("CONFIRMED")).toEqual([
+      "CHECKED_IN",
       "IN_PROGRESS",
+      "NO_SHOW",
+      "CANCELLED",
+    ]);
+    expect(getAllowedNextBookingStatuses("CHECKED_IN")).toEqual([
+      "IN_PROGRESS",
+      "WAITING_APPROVAL",
       "CANCELLED",
     ]);
     expect(getAllowedNextBookingStatuses("IN_PROGRESS")).toEqual([
+      "WAITING_APPROVAL",
+      "QC_PENDING",
       "COMPLETED",
       "CANCELLED",
     ]);
     expect(getAllowedNextBookingStatuses("COMPLETED")).toEqual([]);
     expect(getAllowedNextBookingStatuses("CANCELLED")).toEqual([]);
+    expect(getAllowedNextBookingStatuses("NO_SHOW")).toEqual([]);
   });
 
   it("allows valid forward transitions", () => {

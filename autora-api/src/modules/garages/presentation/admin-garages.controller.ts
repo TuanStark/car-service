@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -8,6 +9,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Put,
   Query,
   UseGuards,
 } from "@nestjs/common";
@@ -21,11 +23,18 @@ import {
 import { PoliciesGuard } from "@core/guards/policies.guard";
 import {
   AdminGarageQueryDto,
+  CreateGarageBayDto,
   CreateGarageDto,
+  SyncGarageServicesDto,
+  UpdateGarageBayDto,
   UpdateGarageDto,
   UpdateGarageStatusDto,
 } from "../application/dto/admin-garage.dto";
 import { CreateGarageUseCase } from "../application/use-cases/create-garage.use-case";
+import {
+  ManageGarageBaysUseCase,
+  SyncGarageServicesUseCase,
+} from "../application/use-cases/garage-operations.use-cases";
 import { GetAdminGarageDetailsUseCase } from "../application/use-cases/get-admin-garage-details.use-case";
 import { GetAdminGarageListUseCase } from "../application/use-cases/get-admin-garage-list.use-case";
 import {
@@ -44,7 +53,9 @@ export class AdminGaragesController {
     private readonly getGarageDetails: GetAdminGarageDetailsUseCase,
     private readonly createGarage: CreateGarageUseCase,
     private readonly updateGarage: UpdateGarageUseCase,
-    private readonly updateGarageStatus: UpdateGarageStatusUseCase
+    private readonly updateGarageStatus: UpdateGarageStatusUseCase,
+    private readonly manageBays: ManageGarageBaysUseCase,
+    private readonly syncServices: SyncGarageServicesUseCase
   ) {}
 
   @Get()
@@ -88,6 +99,48 @@ export class AdminGaragesController {
     @CurrentUser() actor: AuthenticatedUser
   ) {
     return this.updateGarageStatus.execute(id, dto, actor);
+  }
+
+  @Post(":id/bays")
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: "[Admin] Thêm cầu nâng / khoang dịch vụ cho garage" })
+  async addBay(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body() dto: CreateGarageBayDto,
+    @CurrentUser() actor: AuthenticatedUser
+  ) {
+    return this.manageBays.createBay(id, dto, actor);
+  }
+
+  @Patch(":id/bays/:bayId")
+  @ApiOperation({ summary: "[Admin] Cập nhật thông tin / trạng thái cầu nâng" })
+  async updateBay(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Param("bayId", ParseUUIDPipe) bayId: string,
+    @Body() dto: UpdateGarageBayDto,
+    @CurrentUser() actor: AuthenticatedUser
+  ) {
+    return this.manageBays.updateBay(id, bayId, dto, actor);
+  }
+
+  @Delete(":id/bays/:bayId")
+  @ApiOperation({ summary: "[Admin] Xóa cầu nâng khỏi garage" })
+  async deleteBay(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Param("bayId", ParseUUIDPipe) bayId: string,
+    @CurrentUser() actor: AuthenticatedUser
+  ) {
+    return this.manageBays.deleteBay(id, bayId, actor);
+  }
+
+  @Put(":id/services")
+  @ApiOperation({ summary: "[Admin] Đồng bộ ma trận dịch vụ & giá riêng theo garage" })
+  async syncGarageServices(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body() dto: SyncGarageServicesDto,
+    @CurrentUser() actor: AuthenticatedUser
+  ) {
+    return this.syncServices.execute(id, dto, actor);
   }
 }
 

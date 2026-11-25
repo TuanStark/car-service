@@ -35,11 +35,22 @@ export interface GarageListItemDto {
   readonly updatedAt: string;
 }
 
+export interface GarageBayDto {
+  readonly id: string;
+  readonly code: string;
+  readonly name: string;
+  readonly bayType: "QUICK_SERVICE" | "TWO_POST" | "ALIGNMENT_3D" | "DETAILING";
+  readonly status: "AVAILABLE" | "OCCUPIED" | "MAINTENANCE";
+  readonly sortOrder: number;
+  readonly notes: string | null;
+}
+
 export interface GarageDetailDto extends GarageListItemDto {
   readonly coverImageUrl: string;
   readonly certifications: readonly string[];
   readonly summary: string;
   readonly createdAt: string;
+  readonly bays: readonly GarageBayDto[];
   readonly offeredServices: readonly {
     readonly serviceProductId: string;
     readonly sku: string;

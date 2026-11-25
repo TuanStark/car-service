@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   Building2,
   CalendarClock,
+  CalendarRange,
   FileClock,
   LayoutDashboard,
   LogOut,
@@ -20,7 +21,8 @@ import { Button } from "@/shared/ui/button";
 
 const NAV_ITEMS = [
   { href: "/", label: "Tổng quan", icon: LayoutDashboard, exact: true },
-  { href: "/bookings", label: "Lịch hẹn", icon: CalendarClock },
+  { href: "/bookings", label: "Lịch hẹn & RO", icon: CalendarClock, exact: true },
+  { href: "/bookings/schedule", label: "Điều phối cầu nâng", icon: CalendarRange },
   { href: "/garages", label: "Quản lý Garage", icon: Building2 },
   { href: "/services", label: "Dịch vụ & Bảng giá", icon: Wrench },
   { href: "/customers", label: "Khách hàng", icon: Users },

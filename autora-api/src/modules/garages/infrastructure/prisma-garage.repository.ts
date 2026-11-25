@@ -111,6 +111,7 @@ export class PrismaGarageRepository
       where: { id },
       include: {
         _count: { select: { garageServices: true, bookings: true } },
+        bays: { orderBy: { sortOrder: "asc" } },
         garageServices: {
           include: {
             serviceProduct: {
@@ -152,6 +153,15 @@ export class PrismaGarageRepository
       certifications: row.certifications,
       summary: row.summary,
       createdAt: row.createdAt.toISOString(),
+      bays: row.bays.map((b) => ({
+        id: b.id,
+        code: b.code,
+        name: b.name,
+        bayType: b.bayType,
+        status: b.status,
+        sortOrder: b.sortOrder,
+        notes: b.notes,
+      })),
       offeredServices: row.garageServices.map((gs) => ({
         serviceProductId: gs.serviceProductId,
         sku: gs.serviceProduct.sku,
