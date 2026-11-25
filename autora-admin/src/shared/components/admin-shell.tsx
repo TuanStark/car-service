@@ -89,7 +89,7 @@ export function AdminShell({
           </div>
         </div>
 
-        <nav className="flex-1 space-y-1 p-3" aria-label="Menu quản trị">
+        <nav className="flex-1 overflow-y-auto space-y-1 p-3" aria-label="Menu quản trị">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             const isActive =
@@ -154,7 +154,7 @@ export function AdminShell({
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <nav className="flex-1 space-y-1 p-3">
+            <nav className="flex-1 overflow-y-auto space-y-1 p-3">
               {NAV_ITEMS.map((item) => {
                 const Icon = item.icon;
                 const isActive =
