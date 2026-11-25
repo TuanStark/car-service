@@ -3,11 +3,13 @@
 import React, { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  Boxes,
   Camera,
   CheckCircle2,
   CreditCard,
   Plus,
   RefreshCw,
+  RotateCcw,
   Trash2,
   X,
 } from "lucide-react";
@@ -16,6 +18,7 @@ import {
   fetchAdminGarageDetail,
   fetchAdminGarages,
 } from "@/features/garages/api";
+import { fetchAdminParts } from "@/features/inventory/api";
 import { fetchAdminServices } from "@/features/services/api";
 import { Button } from "@/shared/ui/button";
 import { Card, CardHeader } from "@/shared/ui/card";
@@ -27,11 +30,14 @@ import { formatViDateTime, formatVnd } from "@/shared/utils/format";
 import {
   addAdminBookingItem,
   type BookingDetail,
+  issueBookingBomParts,
+  issueBookingManualPart,
   type PaymentMethod,
   recordAdminBookingInspection,
   recordAdminBookingPayment,
   removeAdminBookingItem,
   rescheduleAdminBooking,
+  returnBookingPart,
 } from "../api";
 
 const SLOTS = ["08:00", "09:30", "11:00", "13:30", "15:00", "16:30"] as const;
@@ -798,6 +804,231 @@ export function VehicleInspectionPanel({
             </div>
           ))
         )}
+      </div>
+    </Card>
+  );
+}
+
+export function BookingPartsCard({
+  booking,
+}: {
+  readonly booking: BookingDetail;
+}) {
+  const queryClient = useQueryClient();
+  const { notifySuccess, notifyError } = useToast();
+  const [manualOpen, setManualOpen] = useState(false);
+  const [partItemId, setPartItemId] = useState("");
+  const [qtyUsed, setQtyUsed] = useState("1");
+
+  const { data: partsData } = useQuery({
+    queryKey: ["admin", "parts", "booking-issue"],
+    queryFn: () => fetchAdminParts({ page: 1, limit: 100 }),
+    enabled: manualOpen,
+  });
+
+  const parts = partsData?.items ?? [];
+  const effectivePartId = partItemId || parts[0]?.id || "";
+
+  const issueBomMutation = useMutation({
+    mutationFn: () => issueBookingBomParts(booking.id),
+    onSuccess: () => {
+      notifySuccess("Đã xuất vật tư theo BOM & trừ kho Garage");
+      void queryClient.invalidateQueries({
+        queryKey: ["admin", "booking", booking.id],
+      });
+      void queryClient.invalidateQueries({ queryKey: ["admin", "inventory"] });
+    },
+    onError: (err) => {
+      notifyError(
+        err instanceof ApiError
+          ? err.message
+          : "Xuất BOM thất bại. Vui lòng kiểm tra tồn kho hoặc BOM."
+      );
+    },
+  });
+
+  const issueManualMutation = useMutation({
+    mutationFn: () =>
+      issueBookingManualPart(booking.id, {
+        partItemId: effectivePartId,
+        qtyUsed: Number(qtyUsed),
+      }),
+    onSuccess: () => {
+      notifySuccess("Đã xuất lẻ vật tư & ghi nhận giá vốn (COGS)");
+      setManualOpen(false);
+      void queryClient.invalidateQueries({
+        queryKey: ["admin", "booking", booking.id],
+      });
+      void queryClient.invalidateQueries({ queryKey: ["admin", "inventory"] });
+    },
+    onError: (err) => {
+      notifyError(
+        err instanceof ApiError
+          ? err.message
+          : "Xuất lẻ thất bại. Không đủ tồn kho hoặc lỗi dữ liệu."
+      );
+    },
+  });
+
+  const returnMutation = useMutation({
+    mutationFn: (usageId: string) => returnBookingPart(booking.id, usageId),
+    onSuccess: () => {
+      notifySuccess("Đã hoàn trả vật tư về kho Garage");
+      void queryClient.invalidateQueries({
+        queryKey: ["admin", "booking", booking.id],
+      });
+      void queryClient.invalidateQueries({ queryKey: ["admin", "inventory"] });
+    },
+    onError: (err) => {
+      notifyError(
+        err instanceof ApiError ? err.message : "Hoàn kho thất bại. Vui lòng thử lại."
+      );
+    },
+  });
+
+  const grossProfitVnd = booking.totalVnd - booking.cogsTotalVnd;
+
+  return (
+    <Card>
+      <CardHeader
+        title="Vật tư xuất kho & Giá vốn (COGS)"
+        description="Xuất vật tư tự động theo định mức BOM hoặc xuất lẻ, tính giá vốn thực tế của RO"
+        action={
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={issueBomMutation.isPending}
+              onClick={() => issueBomMutation.mutate()}
+            >
+              <Boxes className="h-3.5 w-3.5" />
+              {issueBomMutation.isPending ? "Đang xuất..." : "Xuất theo BOM"}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setManualOpen((v) => !v)}
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Xuất lẻ
+            </Button>
+          </div>
+        }
+      />
+
+      {manualOpen && (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!effectivePartId) return;
+            issueManualMutation.mutate();
+          }}
+          className="grid grid-cols-12 items-end gap-2 border-b border-line bg-surface-subtle p-4 text-xs"
+        >
+          <div className="col-span-7">
+            <label className="mb-1 block font-semibold text-ink">Chọn vật tư / phụ tùng</label>
+            <Select
+              value={effectivePartId}
+              onChange={(e) => setPartItemId(e.target.value)}
+            >
+              {parts.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.sku} — {p.name} ({p.unit})
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div className="col-span-2">
+            <label className="mb-1 block font-semibold text-ink">Số lượng</label>
+            <Input
+              type="number"
+              min={0.5}
+              step="0.5"
+              required
+              value={qtyUsed}
+              onChange={(e) => setQtyUsed(e.target.value)}
+            />
+          </div>
+          <div className="col-span-3 flex justify-end gap-1.5">
+            <Button
+              type="submit"
+              size="sm"
+              disabled={issueManualMutation.isPending || !effectivePartId}
+            >
+              Xuất kho
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => setManualOpen(false)}
+            >
+              Đóng
+            </Button>
+          </div>
+        </form>
+      )}
+
+      <div className="divide-y divide-line">
+        {booking.partUsages.length === 0 ? (
+          <p className="p-5 text-xs text-ink-muted">
+            Chưa xuất vật tư nào cho Lệnh sửa chữa này. Bấm{" "}
+            <strong>Xuất theo BOM</strong> để trừ kho tự động theo dịch vụ đã chọn.
+          </p>
+        ) : (
+          booking.partUsages.map((u) => (
+            <div
+              key={u.id}
+              className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 text-xs"
+            >
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono font-bold text-brand">{u.sku}</span>
+                  <span className="font-semibold text-ink">{u.partName}</span>
+                </div>
+                <div className="text-[11px] text-ink-muted">
+                  SL: {u.qtyUsed} {u.unit} × {formatVnd(u.unitCostVnd)} • Xuất bởi{" "}
+                  {u.issuedByEmail ?? "—"}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <span className="font-mono font-bold tabular-nums text-ink">
+                  {formatVnd(u.lineCostVnd)}
+                </span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={returnMutation.isPending}
+                  onClick={() => returnMutation.mutate(u.id)}
+                  title="Hoàn trả vật tư về kho Garage"
+                >
+                  <RotateCcw className="h-3.5 w-3.5 text-ink-secondary" />
+                  Hoàn kho
+                </Button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-line bg-surface-subtle px-5 py-3 text-xs">
+        <span>
+          Tổng giá vốn vật tư (COGS):{" "}
+          <strong className="font-mono text-sm text-ink">
+            {formatVnd(booking.cogsTotalVnd)}
+          </strong>
+        </span>
+        <span>
+          Lợi nhuận gộp tạm tính:{" "}
+          <strong
+            className={`font-mono text-sm ${
+              grossProfitVnd >= 0 ? "text-success" : "text-danger"
+            }`}
+          >
+            {formatVnd(grossProfitVnd)}
+          </strong>
+        </span>
       </div>
     </Card>
   );

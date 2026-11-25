@@ -25,6 +25,7 @@ import {
   AdminBookingQueryDto,
   CreateAdminBookingDto,
   DispatchScheduleQueryDto,
+  IssueManualPartDto,
   RecordBookingInspectionDto,
   RecordBookingPaymentDto,
   RemoveBookingItemDto,
@@ -39,6 +40,7 @@ import {
   RecordBookingPaymentUseCase,
   RescheduleBookingUseCase,
 } from "../application/use-cases/booking-operations.use-cases";
+import { BookingPartsUseCases } from "../application/use-cases/booking-parts.use-cases";
 import { GetAdminBookingDetailsUseCase } from "../application/use-cases/get-admin-booking-details.use-case";
 import { GetAdminBookingListUseCase } from "../application/use-cases/get-admin-booking-list.use-case";
 import { UpdateBookingStatusUseCase } from "../application/use-cases/update-booking-status.use-case";
@@ -58,7 +60,8 @@ export class AdminBookingsController {
     private readonly rescheduleBooking: RescheduleBookingUseCase,
     private readonly recordPayment: RecordBookingPaymentUseCase,
     private readonly adjustWorkOrder: AdjustBookingWorkOrderUseCase,
-    private readonly recordInspection: RecordBookingInspectionUseCase
+    private readonly recordInspection: RecordBookingInspectionUseCase,
+    private readonly bookingParts: BookingPartsUseCases
   ) {}
 
   @Get("schedule")
@@ -153,5 +156,36 @@ export class AdminBookingsController {
     @CurrentUser() actor: AuthenticatedUser
   ) {
     return this.recordInspection.execute(id, dto, actor);
+  }
+
+  @Post(":id/parts/issue-bom")
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: "[Admin] Xuất vật tư tự động theo định mức BOM của Lệnh sửa chữa" })
+  async issueBomParts(
+    @Param("id", ParseUUIDPipe) id: string,
+    @CurrentUser() actor: AuthenticatedUser
+  ) {
+    return this.bookingParts.issueBomParts(id, actor);
+  }
+
+  @Post(":id/parts")
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: "[Admin] Xuất lẻ vật tư/phụ tùng cho Lệnh sửa chữa" })
+  async issueManualPart(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body() dto: IssueManualPartDto,
+    @CurrentUser() actor: AuthenticatedUser
+  ) {
+    return this.bookingParts.issueManualPart(id, dto, actor);
+  }
+
+  @Delete(":id/parts/:usageId")
+  @ApiOperation({ summary: "[Admin] Hoàn trả vật tư đã xuất về kho Garage" })
+  async returnPart(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Param("usageId", ParseUUIDPipe) usageId: string,
+    @CurrentUser() actor: AuthenticatedUser
+  ) {
+    return this.bookingParts.returnPart(id, usageId, actor);
   }
 }

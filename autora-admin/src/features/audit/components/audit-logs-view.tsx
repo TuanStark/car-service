@@ -38,8 +38,20 @@ const EVENT_LABELS: Record<string, string> = {
   "admin.service.updated": "Cập nhật gói dịch vụ",
   "admin.service.activated": "Kích hoạt mở bán dịch vụ",
   "admin.service.deactivated": "Tạm ngưng gói dịch vụ",
+  "admin.service.bom_synced": "Cập nhật định mức vật tư (BOM)",
   "admin.media.presigned": "Cấp chữ ký upload Cloudinary",
   "admin.media.uploaded": "Tải lên hình ảnh",
+  "admin.part.created": "Tạo mã phụ tùng / vật tư mới",
+  "admin.part.updated": "Cập nhật phụ tùng / vật tư",
+  "admin.inventory.adjusted": "Điều chỉnh tồn kho",
+  "admin.inventory.transferred": "Điều chuyển kho giữa các Garage",
+  "admin.supplier.created": "Thêm nhà cung cấp mới",
+  "admin.po.created": "Tạo đơn nhập hàng (PO)",
+  "admin.po.status_updated": "Cập nhật trạng thái đơn nhập hàng",
+  "admin.po.received": "Nhập kho từ đơn nhập hàng (PO)",
+  "admin.booking.parts_issued_bom": "Xuất vật tư tự động theo BOM",
+  "admin.booking.part_issued": "Xuất lẻ vật tư cho RO",
+  "admin.booking.part_returned": "Hoàn kho vật tư từ RO",
 };
 
 function formatPayloadPreview(payload: unknown): string {

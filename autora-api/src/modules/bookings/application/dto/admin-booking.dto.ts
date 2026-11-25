@@ -7,6 +7,7 @@ import {
   IsDateString,
   IsIn,
   IsInt,
+  IsNumber,
   IsOptional,
   IsString,
   IsUUID,
@@ -387,4 +388,23 @@ export class RecordBookingInspectionDto {
   @IsString()
   @MaxLength(1000)
   notes?: string;
+}
+
+export class IssueManualPartDto {
+  @ApiProperty()
+  @IsUUID()
+  partItemId!: string;
+
+  @ApiProperty({ example: 1 })
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0.01)
+  @Max(10000)
+  qtyUsed!: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(250)
+  note?: string;
 }

@@ -123,3 +123,34 @@ export function toggleAdminServiceStatus(
   });
 }
 
+export interface ServiceBomItem {
+  readonly id: string;
+  readonly partItemId: string;
+  readonly sku: string;
+  readonly partName: string;
+  readonly unit: string;
+  readonly avgCostVnd: number;
+  readonly vehicleBodyType: VehicleBodyEnum;
+  readonly standardQty: number;
+  readonly isOptional: boolean;
+}
+
+export function fetchServiceBom(serviceId: string): Promise<ServiceBomItem[]> {
+  return apiData<ServiceBomItem[]>(`/admin/services/${serviceId}/bom`);
+}
+
+export function syncServiceBom(
+  serviceId: string,
+  items: readonly {
+    partItemId: string;
+    vehicleBodyType: VehicleBodyEnum;
+    standardQty: number;
+    isOptional?: boolean;
+  }[]
+): Promise<ServiceBomItem[]> {
+  return apiData<ServiceBomItem[]>(`/admin/services/${serviceId}/bom`, {
+    method: "PUT",
+    body: { items },
+  });
+}
+

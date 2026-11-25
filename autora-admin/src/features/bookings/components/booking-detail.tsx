@@ -30,6 +30,7 @@ import {
   updateAdminBookingStatus,
 } from "../api";
 import {
+  BookingPartsCard,
   PaymentReconciliationCard,
   RescheduleBookingModal,
   VehicleInspectionPanel,
@@ -235,6 +236,8 @@ export function BookingDetailView({ bookingId }: { readonly bookingId: string })
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         <div className="space-y-6 lg:col-span-8">
           <WorkOrderItemsCard booking={data} />
+
+          <BookingPartsCard booking={data} />
 
           <VehicleInspectionPanel booking={data} />
 

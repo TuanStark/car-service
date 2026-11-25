@@ -25,7 +25,9 @@ import { CustomersModule } from "@modules/customers/customers.module";
 import { DashboardModule } from "@modules/dashboard/dashboard.module";
 import { GaragesModule } from "@modules/garages/garages.module";
 import { IamModule } from "@modules/iam/iam.module";
+import { InventoryModule } from "@modules/inventory/inventory.module";
 import { MediaModule } from "@modules/media/media.module";
+import { ProcurementModule } from "@modules/procurement/procurement.module";
 
 @Module({
   imports: [
@@ -59,6 +61,8 @@ import { MediaModule } from "@modules/media/media.module";
     DashboardModule,
     AuditModule,
     MediaModule,
+    InventoryModule,
+    ProcurementModule,
   ],
   providers: [
     {

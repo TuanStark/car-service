@@ -104,6 +104,33 @@ enum GarageStatus {
   SUSPENDED
 }
 
+enum PartCategory {
+  OIL_FLUID
+  FILTER
+  BRAKE
+  TIRE
+  BATTERY
+  DETAILING_CHEM
+  SPARE_PART
+}
+
+enum PurchaseOrderStatus {
+  DRAFT
+  ORDERED
+  PARTIALLY_RECEIVED
+  RECEIVED
+  CANCELLED
+}
+
+enum StockMovementType {
+  IN_PO
+  OUT_WORK_ORDER
+  RETURN_WORK_ORDER
+  TRANSFER_OUT
+  TRANSFER_IN
+  ADJUSTMENT
+}
+
 // ==============================================================================
 // IAM & AUDIT MODELS
 // ==============================================================================
@@ -277,8 +304,9 @@ model ServiceProduct {
   updatedAt             DateTime          @updatedAt @map("updated_at")
   deletedAt             DateTime?         @map("deleted_at")
 
-  category       ServiceCategory @relation(fields: [categoryId], references: [id])
+  category       ServiceCategory     @relation(fields: [categoryId], references: [id])
   garageServices GarageService[]
+  partRecipes    ServicePartRecipe[]
   bookingItems   BookingItem[]
   reviews        Review[]
 
@@ -314,9 +342,13 @@ model Garage {
   updatedAt        DateTime     @updatedAt @map("updated_at")
   deletedAt        DateTime?    @map("deleted_at")
 
-  owner          User?           @relation("GarageOwner", fields: [ownerUserId], references: [id])
+  owner          User?             @relation("GarageOwner", fields: [ownerUserId], references: [id])
   bays           ServiceBay[]
   garageServices GarageService[]
+  inventories    GarageInventory[]
+  purchaseOrders PurchaseOrder[]
+  stockMovements StockMovement[]
+  partUsages     BookingPartUsage[]
   bookings       Booking[]
   reviews        Review[]
 
@@ -451,6 +483,7 @@ model Booking {
   statusHistory BookingStatusHistory[]
   inspections   BookingInspection[]
   paymentLogs   BookingPaymentLog[]
+  partUsages    BookingPartUsage[]
 
   @@index([userId, createdAt])
   @@index([garageId, appointmentDate, appointmentTime, status])
@@ -550,4 +583,169 @@ model Review {
   @@index([garageId, deletedAt, createdAt])
   @@index([serviceProductId, deletedAt, createdAt])
   @@map("reviews")
+}
+
+// ==============================================================================
+// PHASE 2: INVENTORY, SUPPLIERS, PROCUREMENT (PO) & BOM MODELS
+// ==============================================================================
+
+model Supplier {
+  id               String    @id @default(uuid()) @db.Uuid
+  code             String    @unique @db.VarChar(40)
+  name             String    @db.VarChar(180)
+  phone            String?   @db.VarChar(20)
+  email            String?   @db.VarChar(255)
+  address          String?   @db.VarChar(350)
+  taxCode          String?   @map("tax_code") @db.VarChar(30)
+  paymentTermsDays Int       @default(0) @map("payment_terms_days")
+  isActive         Boolean   @default(true) @map("is_active")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  deletedAt        DateTime? @map("deleted_at")
+
+  purchaseOrders PurchaseOrder[]
+
+  @@index([isActive, deletedAt])
+  @@map("suppliers")
+}
+
+model PartItem {
+  id           String       @id @default(uuid()) @db.Uuid
+  sku          String       @unique @db.VarChar(50)
+  oemCode      String?      @map("oem_code") @db.VarChar(60)
+  name         String       @db.VarChar(200)
+  category     PartCategory
+  unit         String       @db.VarChar(20)
+  minStockQty  Decimal      @default(5) @map("min_stock_qty") @db.Decimal(10, 2)
+  avgCostVnd   Int          @default(0) @map("avg_cost_vnd")
+  sellPriceVnd Int          @default(0) @map("sell_price_vnd")
+  imageUrl     String?      @map("image_url") @db.VarChar(500)
+  isActive     Boolean      @default(true) @map("is_active")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+  deletedAt    DateTime?    @map("deleted_at")
+
+  inventories        GarageInventory[]
+  serviceRecipes     ServicePartRecipe[]
+  purchaseOrderItems PurchaseOrderItem[]
+  stockMovements     StockMovement[]
+  bookingPartUsages  BookingPartUsage[]
+
+  @@index([category, isActive, deletedAt])
+  @@map("part_items")
+}
+
+model GarageInventory {
+  id          String   @id @default(uuid()) @db.Uuid
+  garageId    String   @map("garage_id") @db.Uuid
+  partItemId  String   @map("part_item_id") @db.Uuid
+  onHandQty   Decimal  @default(0) @map("on_hand_qty") @db.Decimal(10, 2)
+  reservedQty Decimal  @default(0) @map("reserved_qty") @db.Decimal(10, 2)
+  binLocation String?  @map("bin_location") @db.VarChar(60)
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  garage   Garage   @relation(fields: [garageId], references: [id], onDelete: Cascade)
+  partItem PartItem @relation(fields: [partItemId], references: [id], onDelete: Cascade)
+
+  @@unique([garageId, partItemId])
+  @@index([garageId])
+  @@map("garage_inventories")
+}
+
+model ServicePartRecipe {
+  id               String          @id @default(uuid()) @db.Uuid
+  serviceProductId String          @map("service_product_id") @db.Uuid
+  partItemId       String          @map("part_item_id") @db.Uuid
+  vehicleBodyType  VehicleBodyType @default(ALL) @map("vehicle_body_type")
+  standardQty      Decimal         @map("standard_qty") @db.Decimal(10, 2)
+  isOptional       Boolean         @default(false) @map("is_optional")
+
+  serviceProduct ServiceProduct @relation(fields: [serviceProductId], references: [id], onDelete: Cascade)
+  partItem       PartItem       @relation(fields: [partItemId], references: [id], onDelete: Cascade)
+
+  @@unique([serviceProductId, partItemId, vehicleBodyType])
+  @@index([serviceProductId])
+  @@map("service_part_recipes")
+}
+
+model PurchaseOrder {
+  id             String              @id @default(uuid()) @db.Uuid
+  poCode         String              @unique @map("po_code") @db.VarChar(40)
+  supplierId     String              @map("supplier_id") @db.Uuid
+  garageId       String              @map("garage_id") @db.Uuid
+  status         PurchaseOrderStatus @default(DRAFT)
+  totalCostVnd   Int                 @default(0) @map("total_cost_vnd")
+  paidAmountVnd  Int                 @default(0) @map("paid_amount_vnd")
+  expectedDate   DateTime?           @map("expected_date") @db.Date
+  receivedAt     DateTime?           @map("received_at")
+  notes          String?             @db.Text
+  createdByEmail String?             @map("created_by_email") @db.VarChar(255)
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
+
+  supplier Supplier            @relation(fields: [supplierId], references: [id])
+  garage   Garage              @relation(fields: [garageId], references: [id])
+  items    PurchaseOrderItem[]
+
+  @@index([garageId, status, createdAt])
+  @@index([supplierId, status])
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderItem {
+  id              String  @id @default(uuid()) @db.Uuid
+  purchaseOrderId String  @map("purchase_order_id") @db.Uuid
+  partItemId      String  @map("part_item_id") @db.Uuid
+  orderedQty      Decimal @map("ordered_qty") @db.Decimal(10, 2)
+  receivedQty     Decimal @default(0) @map("received_qty") @db.Decimal(10, 2)
+  unitCostVnd     Int     @map("unit_cost_vnd")
+  lineTotalVnd    Int     @map("line_total_vnd")
+
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  partItem      PartItem      @relation(fields: [partItemId], references: [id])
+
+  @@index([purchaseOrderId])
+  @@map("purchase_order_items")
+}
+
+model StockMovement {
+  id             String            @id @default(uuid()) @db.Uuid
+  garageId       String            @map("garage_id") @db.Uuid
+  partItemId     String            @map("part_item_id") @db.Uuid
+  type           StockMovementType
+  qtyDelta       Decimal           @map("qty_delta") @db.Decimal(10, 2)
+  unitCostVnd    Int               @map("unit_cost_vnd")
+  referenceType  String?           @map("reference_type") @db.VarChar(40)
+  referenceId    String?           @map("reference_id") @db.VarChar(80)
+  reason         String?           @db.VarChar(500)
+  createdByEmail String?           @map("created_by_email") @db.VarChar(255)
+  createdAt      DateTime          @default(now()) @map("created_at")
+
+  garage   Garage   @relation(fields: [garageId], references: [id], onDelete: Cascade)
+  partItem PartItem @relation(fields: [partItemId], references: [id], onDelete: Cascade)
+
+  @@index([garageId, partItemId, createdAt])
+  @@index([createdAt])
+  @@map("stock_movements")
+}
+
+model BookingPartUsage {
+  id            String   @id @default(uuid()) @db.Uuid
+  bookingId     String   @map("booking_id") @db.Uuid
+  partItemId    String   @map("part_item_id") @db.Uuid
+  garageId      String   @map("garage_id") @db.Uuid
+  qtyUsed       Decimal  @map("qty_used") @db.Decimal(10, 2)
+  unitCostVnd   Int      @map("unit_cost_vnd")
+  unitSellVnd   Int      @map("unit_sell_vnd")
+  lineCostVnd   Int      @map("line_cost_vnd")
+  issuedByEmail String?  @map("issued_by_email") @db.VarChar(255)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  booking  Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  partItem PartItem @relation(fields: [partItemId], references: [id])
+  garage   Garage   @relation(fields: [garageId], references: [id])
+
+  @@index([bookingId])
+  @@index([garageId, createdAt])
+  @@map("booking_part_usages")
 }

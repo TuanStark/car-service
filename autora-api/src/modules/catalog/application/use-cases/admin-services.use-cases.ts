@@ -18,10 +18,23 @@ import {
 import type {
   AdminServiceQueryDto,
   CreateServiceDto,
+  SyncServiceBomDto,
   UpdateServiceDto,
 } from "../dto/admin-service.dto";
 
 export type ServiceProductView = { id: string } & ServiceProductProps;
+
+export interface ServiceBomItemView {
+  readonly id: string;
+  readonly partItemId: string;
+  readonly sku: string;
+  readonly partName: string;
+  readonly unit: string;
+  readonly avgCostVnd: number;
+  readonly vehicleBodyType: string;
+  readonly standardQty: number;
+  readonly isOptional: boolean;
+}
 
 @Injectable()
 export class AdminServicesUseCases {
@@ -221,6 +234,102 @@ export class AdminServicesUseCases {
 
       return updated.toJSON();
     });
+  }
+
+  async getBom(serviceId: string): Promise<ServiceBomItemView[]> {
+    const client = this.uow.getClient();
+    const service = await client.serviceProduct.findUnique({
+      where: { id: serviceId },
+      select: { id: true },
+    });
+    if (!service) {
+      throw new EntityNotFoundException("Gói dịch vụ", serviceId);
+    }
+
+    const rows = await client.servicePartRecipe.findMany({
+      where: { serviceProductId: serviceId },
+      include: {
+        partItem: {
+          select: { id: true, sku: true, name: true, unit: true, avgCostVnd: true },
+        },
+      },
+      orderBy: [{ vehicleBodyType: "asc" }, { partItem: { name: "asc" } }],
+    });
+
+    return rows.map((row) => ({
+      id: row.id,
+      partItemId: row.partItemId,
+      sku: row.partItem.sku,
+      partName: row.partItem.name,
+      unit: row.partItem.unit,
+      avgCostVnd: row.partItem.avgCostVnd,
+      vehicleBodyType: row.vehicleBodyType,
+      standardQty: Number(row.standardQty),
+      isOptional: row.isOptional,
+    }));
+  }
+
+  async syncBom(
+    serviceId: string,
+    dto: SyncServiceBomDto,
+    actor: AuthenticatedUser
+  ): Promise<ServiceBomItemView[]> {
+    if (!actor.roles.includes("admin")) {
+      throw new ForbiddenDomainException(
+        "Chỉ quản trị viên mới được phép cấu hình định mức vật tư (BOM)."
+      );
+    }
+
+    await this.uow.runInTransaction(async () => {
+      const client = this.uow.getClient();
+      const service = await client.serviceProduct.findUnique({
+        where: { id: serviceId },
+        select: { id: true, sku: true },
+      });
+      if (!service) {
+        throw new EntityNotFoundException("Gói dịch vụ", serviceId);
+      }
+
+      await client.servicePartRecipe.deleteMany({
+        where: { serviceProductId: serviceId },
+      });
+
+      if (dto.items.length > 0) {
+        const partIds = [...new Set(dto.items.map((item) => item.partItemId))];
+        const parts = await client.partItem.findMany({
+          where: { id: { in: partIds } },
+          select: { id: true },
+        });
+        if (parts.length !== partIds.length) {
+          throw new EntityNotFoundException("Phụ tùng / Vật tư", "danh sách BOM");
+        }
+
+        await client.servicePartRecipe.createMany({
+          data: dto.items.map((item) => ({
+            id: generateUuidV7(),
+            serviceProductId: serviceId,
+            partItemId: item.partItemId,
+            vehicleBodyType: item.vehicleBodyType,
+            standardQty: item.standardQty,
+            isOptional: item.isOptional ?? false,
+          })),
+        });
+      }
+
+      await this.auditWriter.record({
+        actorUserId: actor.id,
+        actorEmail: actor.email,
+        eventName: "admin.service.bom_synced",
+        resourceType: "ServiceProduct",
+        resourceId: serviceId,
+        payload: {
+          sku: service.sku,
+          itemCount: dto.items.length,
+        },
+      });
+    });
+
+    return this.getBom(serviceId);
   }
 }
 

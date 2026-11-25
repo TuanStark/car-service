@@ -62,6 +62,20 @@ export interface BookingPaymentLogDto {
   readonly createdAt: string;
 }
 
+export interface BookingPartUsageDto {
+  readonly id: string;
+  readonly partItemId: string;
+  readonly sku: string;
+  readonly partName: string;
+  readonly unit: string;
+  readonly qtyUsed: number;
+  readonly unitCostVnd: number;
+  readonly unitSellVnd: number;
+  readonly lineCostVnd: number;
+  readonly issuedByEmail: string | null;
+  readonly createdAt: string;
+}
+
 export interface BookingDetailDto {
   readonly id: string;
   readonly orderCode: string;
@@ -116,6 +130,8 @@ export interface BookingDetailDto {
   }[];
   readonly inspections: readonly BookingInspectionDto[];
   readonly paymentLogs: readonly BookingPaymentLogDto[];
+  readonly partUsages: readonly BookingPartUsageDto[];
+  readonly cogsTotalVnd: number;
 }
 
 export interface TransitionBookingStatusParams {

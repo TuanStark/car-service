@@ -7,6 +7,7 @@ import {
   RecordBookingPaymentUseCase,
   RescheduleBookingUseCase,
 } from "./application/use-cases/booking-operations.use-cases";
+import { BookingPartsUseCases } from "./application/use-cases/booking-parts.use-cases";
 import { GetAdminBookingDetailsUseCase } from "./application/use-cases/get-admin-booking-details.use-case";
 import { GetAdminBookingListUseCase } from "./application/use-cases/get-admin-booking-list.use-case";
 import { UpdateBookingStatusUseCase } from "./application/use-cases/update-booking-status.use-case";
@@ -26,6 +27,7 @@ import { AdminBookingsController } from "./presentation/admin-bookings.controlle
     RecordBookingPaymentUseCase,
     AdjustBookingWorkOrderUseCase,
     RecordBookingInspectionUseCase,
+    BookingPartsUseCases,
     {
       provide: BOOKING_REPOSITORY,
       useClass: PrismaBookingRepository,

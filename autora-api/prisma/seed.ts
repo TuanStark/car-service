@@ -691,6 +691,173 @@ async function main(): Promise<void> {
     }
   }
 
+  // Seed Suppliers, PartItems, GarageInventory & ServicePartRecipe (BOM)
+  const suppliers = [
+    {
+      code: "NCC-CASTROL-MN",
+      name: "Nhà phân phối Dầu nhớt Castrol Miền Nam",
+      phone: "02838221199",
+      email: "b2b@castrol-miennam.vn",
+      address: "KCN Tân Bình, TP.HCM",
+      taxCode: "0312345678",
+      paymentTermsDays: 30,
+    },
+    {
+      code: "NCC-BOSCH-VN",
+      name: "Công ty Phụ tùng Bosch & Brembo Việt Nam",
+      phone: "02839112233",
+      email: "sales@bosch-parts.vn",
+      address: "Quận 7, TP.HCM",
+      taxCode: "0318765432",
+      paymentTermsDays: 15,
+    },
+  ];
+
+  for (const sup of suppliers) {
+    await prisma.supplier.upsert({
+      where: { code: sup.code },
+      update: {},
+      create: { id: generateUuidV7(), ...sup },
+    });
+  }
+
+  const partsData = [
+    {
+      sku: "PT-OIL-5W30",
+      oemCode: "CASTROL-EDGE-5W30",
+      name: "Dầu động cơ tổng hợp toàn phần 5W-30 API SP",
+      category: "OIL_FLUID" as const,
+      unit: "lít",
+      minStockQty: 20,
+      avgCostVnd: 145000,
+      sellPriceVnd: 220000,
+      imageUrl: "/images/service-maintenance.jpg",
+    },
+    {
+      sku: "PT-FLT-OIL",
+      oemCode: "BOSCH-OF-019",
+      name: "Lọc nhớt động cơ chuẩn OEM (Toyota/Mazda/Honda)",
+      category: "FILTER" as const,
+      unit: "cái",
+      minStockQty: 10,
+      avgCostVnd: 85000,
+      sellPriceVnd: 150000,
+      imageUrl: "/images/service-maintenance.jpg",
+    },
+    {
+      sku: "PT-BRK-PAD",
+      oemCode: "BREMBO-P83",
+      name: "Bộ má phanh đĩa trước gốm Ceramic",
+      category: "BRAKE" as const,
+      unit: "bộ",
+      minStockQty: 4,
+      avgCostVnd: 920000,
+      sellPriceVnd: 1450000,
+      imageUrl: "/images/service-repair.jpg",
+    },
+    {
+      sku: "PT-CHEM-9H",
+      oemCode: "CARPRO-CQUARTZ-50",
+      name: "Dung dịch phủ Ceramic 9H chuyên dụng (Lọ 50ml)",
+      category: "DETAILING_CHEM" as const,
+      unit: "lọ",
+      minStockQty: 5,
+      avgCostVnd: 850000,
+      sellPriceVnd: 1400000,
+      imageUrl: "/images/service-detailing.jpg",
+    },
+    {
+      sku: "PT-TIRE-BAL",
+      oemCode: "LEAD-W-50G",
+      name: "Chì dán cân bằng động mâm đúc & Van cao su",
+      category: "TIRE" as const,
+      unit: "bộ",
+      minStockQty: 15,
+      avgCostVnd: 35000,
+      sellPriceVnd: 80000,
+      imageUrl: "/images/service-tires.jpg",
+    },
+  ];
+
+  const partBySku = new Map<string, string>();
+  for (const part of partsData) {
+    const saved = await prisma.partItem.upsert({
+      where: { sku: part.sku },
+      update: {},
+      create: { id: generateUuidV7(), ...part },
+    });
+    partBySku.set(part.sku, saved.id);
+  }
+
+  for (const garage of garageBySlug.values()) {
+    const initialStock: Record<string, { qty: number; bin: string }> = {
+      "PT-OIL-5W30": { qty: 64, bin: "Kệ A1-01" },
+      "PT-FLT-OIL": { qty: 18, bin: "Kệ A1-02" },
+      "PT-BRK-PAD": { qty: 3, bin: "Kệ B2-01" }, // intentionally below minStockQty (4)
+      "PT-CHEM-9H": { qty: 8, bin: "Tủ C1-03" },
+      "PT-TIRE-BAL": { qty: 30, bin: "Kệ D1-01" },
+    };
+    for (const [sku, cfg] of Object.entries(initialStock)) {
+      const partId = partBySku.get(sku);
+      if (!partId) continue;
+      await prisma.garageInventory.upsert({
+        where: { garageId_partItemId: { garageId: garage.id, partItemId: partId } },
+        update: {},
+        create: {
+          id: generateUuidV7(),
+          garageId: garage.id,
+          partItemId: partId,
+          onHandQty: cfg.qty,
+          reservedQty: 0,
+          binLocation: cfg.bin,
+        },
+      });
+    }
+  }
+
+  const oilService = serviceBySlug.get("thay-dau-dong-co-tong-hop-5w30");
+  const oil20kService = serviceBySlug.get("bao-duong-dinh-ky-moc-20000km-toan-dien");
+  const ceramicService = serviceBySlug.get("hieu-chinh-son-phu-ceramic-9h-chuyen-nghiep");
+  const oilPartId = partBySku.get("PT-OIL-5W30");
+  const filterPartId = partBySku.get("PT-FLT-OIL");
+  const ceramicPartId = partBySku.get("PT-CHEM-9H");
+
+  const bomEntries: {
+    serviceProductId?: string;
+    partItemId?: string;
+    vehicleBodyType: VehicleBodyType;
+    standardQty: number;
+  }[] = [
+    { serviceProductId: oilService?.id, partItemId: oilPartId, vehicleBodyType: VehicleBodyType.ALL, standardQty: 4 },
+    { serviceProductId: oilService?.id, partItemId: oilPartId, vehicleBodyType: VehicleBodyType.SUV, standardQty: 6 },
+    { serviceProductId: oilService?.id, partItemId: filterPartId, vehicleBodyType: VehicleBodyType.ALL, standardQty: 1 },
+    { serviceProductId: oil20kService?.id, partItemId: oilPartId, vehicleBodyType: VehicleBodyType.ALL, standardQty: 4.5 },
+    { serviceProductId: oil20kService?.id, partItemId: filterPartId, vehicleBodyType: VehicleBodyType.ALL, standardQty: 1 },
+    { serviceProductId: ceramicService?.id, partItemId: ceramicPartId, vehicleBodyType: VehicleBodyType.ALL, standardQty: 1 },
+  ];
+
+  for (const bom of bomEntries) {
+    if (!bom.serviceProductId || !bom.partItemId) continue;
+    await prisma.servicePartRecipe.upsert({
+      where: {
+        serviceProductId_partItemId_vehicleBodyType: {
+          serviceProductId: bom.serviceProductId,
+          partItemId: bom.partItemId,
+          vehicleBodyType: bom.vehicleBodyType,
+        },
+      },
+      update: {},
+      create: {
+        id: generateUuidV7(),
+        serviceProductId: bom.serviceProductId,
+        partItemId: bom.partItemId,
+        vehicleBodyType: bom.vehicleBodyType,
+        standardQty: bom.standardQty,
+        isOptional: false,
+      },
+    });
+  }
+
   console.log("[Seed] AUTORA database seeded successfully (Admin: admin@autora.vn / AutoraAdmin@2026).");
 }
 

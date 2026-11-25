@@ -144,6 +144,10 @@ export class PrismaBookingRepository
         statusHistory: { orderBy: { createdAt: "desc" } },
         inspections: { orderBy: { createdAt: "desc" } },
         paymentLogs: { orderBy: { createdAt: "desc" } },
+        partUsages: {
+          include: { partItem: true },
+          orderBy: { createdAt: "desc" },
+        },
       },
     });
 
@@ -226,6 +230,20 @@ export class PrismaBookingRepository
         recordedByEmail: log.recordedByEmail,
         createdAt: log.createdAt.toISOString(),
       })),
+      partUsages: row.partUsages.map((usage) => ({
+        id: usage.id,
+        partItemId: usage.partItemId,
+        sku: usage.partItem.sku,
+        partName: usage.partItem.name,
+        unit: usage.partItem.unit,
+        qtyUsed: Number(usage.qtyUsed),
+        unitCostVnd: usage.unitCostVnd,
+        unitSellVnd: usage.unitSellVnd,
+        lineCostVnd: usage.lineCostVnd,
+        issuedByEmail: usage.issuedByEmail,
+        createdAt: usage.createdAt.toISOString(),
+      })),
+      cogsTotalVnd: row.partUsages.reduce((sum, u) => sum + u.lineCostVnd, 0),
     };
   }
 

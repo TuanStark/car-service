@@ -121,6 +121,22 @@ export interface BookingDetail {
   }[];
   readonly inspections: readonly BookingInspectionItem[];
   readonly paymentLogs: readonly BookingPaymentLogItem[];
+  readonly partUsages: readonly BookingPartUsageItem[];
+  readonly cogsTotalVnd: number;
+}
+
+export interface BookingPartUsageItem {
+  readonly id: string;
+  readonly partItemId: string;
+  readonly sku: string;
+  readonly partName: string;
+  readonly unit: string;
+  readonly qtyUsed: number;
+  readonly unitCostVnd: number;
+  readonly unitSellVnd: number;
+  readonly lineCostVnd: number;
+  readonly issuedByEmail: string | null;
+  readonly createdAt: string;
 }
 
 export interface DispatchGarageSchedule {
@@ -298,5 +314,30 @@ export function recordAdminBookingInspection(
   return apiData<BookingDetail>(`/admin/bookings/${id}/inspections`, {
     method: "POST",
     body: payload,
+  });
+}
+
+export function issueBookingBomParts(id: string): Promise<BookingDetail> {
+  return apiData<BookingDetail>(`/admin/bookings/${id}/parts/issue-bom`, {
+    method: "POST",
+  });
+}
+
+export function issueBookingManualPart(
+  id: string,
+  payload: { partItemId: string; qtyUsed: number; note?: string }
+): Promise<BookingDetail> {
+  return apiData<BookingDetail>(`/admin/bookings/${id}/parts`, {
+    method: "POST",
+    body: payload,
+  });
+}
+
+export function returnBookingPart(
+  id: string,
+  usageId: string
+): Promise<BookingDetail> {
+  return apiData<BookingDetail>(`/admin/bookings/${id}/parts/${usageId}`, {
+    method: "DELETE",
   });
 }

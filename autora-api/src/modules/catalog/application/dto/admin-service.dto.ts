@@ -5,6 +5,7 @@ import {
   IsBoolean,
   IsIn,
   IsInt,
+  IsNumber,
   IsOptional,
   IsString,
   IsUUID,
@@ -14,6 +15,7 @@ import {
   Min,
   MinLength,
   ValidateIf,
+  ValidateNested,
 } from "class-validator";
 import type {
   ServiceBadgeType,
@@ -287,5 +289,35 @@ export class ToggleServiceStatusDto {
   @ApiProperty()
   @IsBoolean()
   isActive!: boolean;
+}
+
+export class ServiceBomItemDto {
+  @ApiProperty()
+  @IsUUID()
+  partItemId!: string;
+
+  @ApiProperty({ enum: VEHICLE_VALUES, default: "ALL" })
+  @IsIn(VEHICLE_VALUES)
+  vehicleBodyType!: VehicleBodyEnum;
+
+  @ApiProperty({ example: 4 })
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0.01)
+  @Max(10000)
+  standardQty!: number;
+
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  isOptional?: boolean;
+}
+
+export class SyncServiceBomDto {
+  @ApiProperty({ type: [ServiceBomItemDto] })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ServiceBomItemDto)
+  items!: ServiceBomItemDto[];
 }
 

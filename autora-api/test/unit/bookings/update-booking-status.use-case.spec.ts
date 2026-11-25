@@ -54,6 +54,8 @@ function createSampleBooking(
     inspections: [],
     paymentLogs: [],
     statusHistory: [],
+    partUsages: [],
+    cogsTotalVnd: 0,
     ...overrides,
   };
 }

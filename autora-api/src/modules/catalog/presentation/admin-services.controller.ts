@@ -8,6 +8,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Put,
   Query,
   UseGuards,
 } from "@nestjs/common";
@@ -22,6 +23,7 @@ import { PoliciesGuard } from "@core/guards/policies.guard";
 import {
   AdminServiceQueryDto,
   CreateServiceDto,
+  SyncServiceBomDto,
   ToggleServiceStatusDto,
   UpdateServiceDto,
 } from "../application/dto/admin-service.dto";
@@ -82,6 +84,22 @@ export class AdminServicesController {
     @CurrentUser() actor: AuthenticatedUser
   ) {
     return this.adminServices.toggleActive(id, dto.isActive, actor);
+  }
+
+  @Get(":id/bom")
+  @ApiOperation({ summary: "[Admin] Lấy định mức vật tư tiêu hao (BOM) của gói dịch vụ" })
+  async getBom(@Param("id", ParseUUIDPipe) id: string) {
+    return this.adminServices.getBom(id);
+  }
+
+  @Put(":id/bom")
+  @ApiOperation({ summary: "[Admin] Cập nhật toàn bộ định mức vật tư (BOM) của gói dịch vụ" })
+  async syncBom(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body() dto: SyncServiceBomDto,
+    @CurrentUser() actor: AuthenticatedUser
+  ) {
+    return this.adminServices.syncBom(id, dto, actor);
   }
 }
 
