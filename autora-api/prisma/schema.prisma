@@ -338,9 +338,10 @@ model Garage {
   isFeatured       Boolean      @default(false) @map("is_featured")
   coverImageUrl    String       @map("cover_image_url") @db.VarChar(500)
   openHours        String       @map("open_hours") @db.VarChar(80)
-  bayCount         Int          @default(4) @map("bay_count")
-  startingPriceVnd Int          @map("starting_price_vnd")
-  certifications   String[]     @default([])
+  bayCount          Int          @default(4) @map("bay_count")
+  startingPriceVnd  Int          @map("starting_price_vnd")
+  commissionRateBps Int          @default(1000) @map("commission_rate_bps")
+  certifications    String[]     @default([])
   summary          String       @db.Text
   createdAt        DateTime     @default(now()) @map("created_at")
   updatedAt        DateTime     @updatedAt @map("updated_at")
@@ -356,6 +357,7 @@ model Garage {
   equipments         WorkshopEquipment[]
   technicianProfiles TechnicianProfile[] @relation("TechPrimaryGarage")
   warrantyRecords    WarrantyRecord[]
+  expenseEntries     ExpenseEntry[]
   bookings           Booking[]
   reviews        Review[]
 
@@ -974,4 +976,37 @@ model WarrantyClaim {
 
   @@index([warrantyRecordId, status])
   @@map("warranty_claims")
+}
+
+// ==============================================================================
+// PHASE 5: FINANCIAL P&L & WORKSHOP CASHBOOK (EXPENSE ENTRIES)
+// ==============================================================================
+
+enum ExpenseCategory {
+  RENT_UTILITIES
+  BASE_SALARY
+  SUPPLIER_PAYMENT
+  EQUIPMENT_MAINT
+  WASTE_DISPOSAL
+  MARKETING
+  OTHER
+}
+
+model ExpenseEntry {
+  id              String          @id @default(uuid()) @db.Uuid
+  garageId        String          @map("garage_id") @db.Uuid
+  category        ExpenseCategory
+  amountVnd       Int             @map("amount_vnd")
+  occurredAt      DateTime        @map("occurred_at") @db.Date
+  referenceCode   String?         @map("reference_code") @db.VarChar(60)
+  description     String          @db.VarChar(400)
+  receiptUrl      String?         @map("receipt_url") @db.VarChar(500)
+  recordedByEmail String?         @map("recorded_by_email") @db.VarChar(255)
+  createdAt       DateTime        @default(now()) @map("created_at")
+
+  garage Garage @relation(fields: [garageId], references: [id], onDelete: Cascade)
+
+  @@index([garageId, occurredAt])
+  @@index([category, occurredAt])
+  @@map("expense_entries")
 }

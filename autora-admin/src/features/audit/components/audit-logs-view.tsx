@@ -66,6 +66,10 @@ const EVENT_LABELS: Record<string, string> = {
   "admin.review.replied": "Phản hồi đánh giá khách hàng",
   "admin.review.hidden": "Ẩn đánh giá vi phạm",
   "admin.review.unhidden": "Hiển thị lại đánh giá",
+  "admin.expense.created": "Ghi nhận phiếu chi vận hành",
+  "admin.expense.deleted": "Xóa phiếu chi vận hành",
+  "admin.staff.suspended": "Khóa tài khoản nhân sự",
+  "admin.staff.activated": "Mở khóa tài khoản nhân sự",
 };
 
 function formatPayloadPreview(payload: unknown): string {

@@ -33,6 +33,7 @@ import { WorkforceModule } from "@modules/workforce/workforce.module";
 import { WarrantiesModule } from "@modules/warranties/warranties.module";
 import { PromotionsModule } from "@modules/promotions/promotions.module";
 import { ReviewsModule } from "@modules/reviews/reviews.module";
+import { ReportsModule } from "@modules/reports/reports.module";
 
 @Module({
   imports: [
@@ -73,6 +74,7 @@ import { ReviewsModule } from "@modules/reviews/reviews.module";
     WarrantiesModule,
     PromotionsModule,
     ReviewsModule,
+    ReportsModule,
   ],
   providers: [
     {

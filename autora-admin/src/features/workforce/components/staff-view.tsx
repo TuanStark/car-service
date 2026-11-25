@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Search, Settings2, Wrench, X } from "lucide-react";
+import { Lock, Plus, Search, Settings2, Unlock, Wrench, X } from "lucide-react";
 import { ApiError } from "@/infrastructure/api/api-client";
 import { fetchAdminGarages } from "@/features/garages/api";
 import { useDebouncedValue } from "@/shared/hooks/use-debounced-value";
@@ -25,6 +25,7 @@ import {
   type StaffRoleCode,
   type TechnicianSkillLevel,
   type TechnicianSpecialty,
+  toggleStaffAccountStatus,
   updateTechnicianProfile,
 } from "../api";
 
@@ -51,6 +52,24 @@ export function StaffView() {
   const [editTarget, setEditTarget] = useState<StaffMemberDto | null>(null);
 
   const debouncedSearch = useDebouncedValue(search, 300);
+  const queryClient = useQueryClient();
+  const { notifySuccess, notifyError } = useToast();
+
+  const statusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: "ACTIVE" | "SUSPENDED" }) =>
+      toggleStaffAccountStatus(id, status),
+    onSuccess: (s) => {
+      notifySuccess(
+        s.status === "SUSPENDED"
+          ? `Đã khóa tài khoản ${s.email} & thu hồi phiên đăng nhập`
+          : `Đã mở khóa tài khoản ${s.email}`
+      );
+      void queryClient.invalidateQueries({ queryKey: ["admin", "staff"] });
+    },
+    onError: (err) => {
+      notifyError(err instanceof ApiError ? err.message : "Thao tác thất bại.");
+    },
+  });
 
   const { data: garagesData } = useQuery({
     queryKey: ["admin", "garages", "staff"],
@@ -221,14 +240,44 @@ export function StaffView() {
                         {formatVnd(staff.performance.estimatedCommissionVnd)}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => setEditTarget(staff)}
-                        >
-                          <Settings2 className="h-3.5 w-3.5" />
-                          Cấu hình KTV
-                        </Button>
+                        <div className="inline-flex items-center gap-1.5">
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => setEditTarget(staff)}
+                          >
+                            <Settings2 className="h-3.5 w-3.5" />
+                            Cấu hình KTV
+                          </Button>
+                          {!staff.roles.some((r) => r.code === "admin") && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              disabled={statusMutation.isPending}
+                              onClick={() =>
+                                statusMutation.mutate({
+                                  id: staff.id,
+                                  status:
+                                    staff.status === "ACTIVE"
+                                      ? "SUSPENDED"
+                                      : "ACTIVE",
+                                })
+                              }
+                            >
+                              {staff.status === "ACTIVE" ? (
+                                <>
+                                  <Lock className="h-3.5 w-3.5 text-danger" />
+                                  Khóa
+                                </>
+                              ) : (
+                                <>
+                                  <Unlock className="h-3.5 w-3.5 text-success" />
+                                  Mở khóa
+                                </>
+                              )}
+                            </Button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}

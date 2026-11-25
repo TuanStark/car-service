@@ -68,7 +68,8 @@ export function AuthProvider({
       try {
         const me = await apiData<AdminUser>("/auth/me");
         if (!active) return;
-        if (!me.roles.includes("admin")) {
+        const allowedRoles = ["admin", "ops_staff", "partner_staff", "technician"];
+        if (!me.roles.some((r) => allowedRoles.includes(r))) {
           clearSession();
           return;
         }
@@ -95,7 +96,8 @@ export function AuthProvider({
     tokenStore.set(tokens.accessToken);
     const me = await apiData<AdminUser>("/auth/me", { skipAuthRefresh: true });
 
-    if (!me.roles.includes("admin")) {
+    const allowedRoles = ["admin", "ops_staff", "partner_staff", "technician"];
+    if (!me.roles.some((r) => allowedRoles.includes(r))) {
       try {
         await apiData("/auth/logout", {
           method: "POST",

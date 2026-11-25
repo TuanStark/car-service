@@ -38,6 +38,22 @@ export class CaslAbilityFactory {
       can("update", "Booking");
     }
 
+    if (user.roles.includes("ops_staff")) {
+      can("read", "Dashboard");
+      can("read", "ServiceProduct");
+      can("read", "Garage");
+      can("read", "Customer");
+      can("create", "Booking");
+      can("read", "Booking");
+      can("update", "Booking");
+    }
+
+    if (user.roles.includes("technician")) {
+      can("read", "Booking");
+      can("update", "Booking");
+      can("read", "ServiceProduct");
+    }
+
     if (user.roles.includes("customer")) {
       can("read", "User");
       can("update", "User");

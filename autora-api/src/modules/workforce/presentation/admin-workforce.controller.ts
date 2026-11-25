@@ -58,5 +58,15 @@ export class AdminWorkforceController {
   ) {
     return this.workforce.updateTechnicianProfile(id, dto, actor);
   }
+
+  @Patch(":id/status")
+  @ApiOperation({ summary: "[Admin] Khóa / mở khóa tài khoản nhân sự & thu hồi RefreshToken" })
+  async toggleStatus(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body() body: { status: "ACTIVE" | "SUSPENDED" },
+    @CurrentUser() actor: AuthenticatedUser
+  ) {
+    return this.workforce.toggleStaffStatus(id, body.status, actor);
+  }
 }
 

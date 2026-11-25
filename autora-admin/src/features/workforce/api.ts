@@ -92,3 +92,13 @@ export function updateTechnicianProfile(
   });
 }
 
+export function toggleStaffAccountStatus(
+  userId: string,
+  status: "ACTIVE" | "SUSPENDED"
+): Promise<StaffMemberDto> {
+  return apiData<StaffMemberDto>(`/admin/staff/${userId}/status`, {
+    method: "PATCH",
+    body: { status },
+  });
+}
+

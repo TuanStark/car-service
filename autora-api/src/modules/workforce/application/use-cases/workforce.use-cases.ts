@@ -319,4 +319,50 @@ export class WorkforceUseCases {
     const list = await this.listStaff({ page: 1, limit: 50 });
     return list.items.find((u) => u.id === userId)!;
   }
+
+  async toggleStaffStatus(
+    userId: string,
+    status: "ACTIVE" | "SUSPENDED",
+    actor: AuthenticatedUser
+  ): Promise<StaffMemberDto> {
+    this.assertAdmin(actor);
+
+    await this.uow.runInTransaction(async () => {
+      const client = this.uow.getClient();
+      const user = await client.user.findUnique({
+        where: { id: userId },
+        select: { id: true, email: true },
+      });
+      if (!user) {
+        throw new EntityNotFoundException("Nhân sự", userId);
+      }
+
+      await client.user.update({
+        where: { id: userId },
+        data: { status },
+      });
+
+      if (status === "SUSPENDED") {
+        await client.refreshToken.updateMany({
+          where: { userId, revokedAt: null },
+          data: { revokedAt: new Date() },
+        });
+      }
+
+      await this.auditWriter.record({
+        actorUserId: actor.id,
+        actorEmail: actor.email,
+        eventName:
+          status === "SUSPENDED"
+            ? "admin.staff.suspended"
+            : "admin.staff.activated",
+        resourceType: "User",
+        resourceId: userId,
+        payload: { email: user.email, status },
+      });
+    });
+
+    const list = await this.listStaff({ page: 1, limit: 50 });
+    return list.items.find((u) => u.id === userId)!;
+  }
 }

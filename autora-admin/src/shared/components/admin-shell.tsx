@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  BarChart3,
   Building2,
   CalendarClock,
   CalendarRange,
@@ -20,6 +21,7 @@ import {
   Truck,
   UserCog,
   Users,
+  Wallet,
   Wrench,
   X,
 } from "lucide-react";
@@ -41,6 +43,8 @@ const NAV_ITEMS = [
   { href: "/warranties", label: "Bảo hành điện tử", icon: ShieldPlus },
   { href: "/promotions", label: "Khuyến mãi", icon: Tag },
   { href: "/reviews", label: "Kiểm duyệt đánh giá", icon: MessageSquareWarning },
+  { href: "/reports", label: "Báo cáo P&L", icon: BarChart3 },
+  { href: "/finance/cashbook", label: "Sổ quỹ Thu / Chi", icon: Wallet },
   { href: "/customers", label: "Khách hàng", icon: Users },
   { href: "/audit-logs", label: "Nhật ký hệ thống", icon: FileClock },
 ] as const;

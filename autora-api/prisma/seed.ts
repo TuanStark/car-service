@@ -5,6 +5,7 @@ import {
   EquipmentCategory,
   EquipmentMaintenanceType,
   EquipmentStatus,
+  ExpenseCategory,
   GarageStatus,
   PaymentMethod,
   PaymentStatus,
@@ -1154,6 +1155,50 @@ async function main(): Promise<void> {
           comment:
             "Thời gian chờ nhận xe hơi lâu vào giờ cao điểm sáng thứ 7, nhưng kỹ thuật viên làm cẩn thận.",
         },
+      });
+    }
+  }
+
+  // ── Phase 5: Sample Workshop Operating Expenses (Cashbook) ─────────────
+  if (primaryGarageId) {
+    const existingExpenses = await prisma.expenseEntry.count({
+      where: { garageId: primaryGarageId },
+    });
+    if (existingExpenses === 0) {
+      const today = new Date();
+      await prisma.expenseEntry.createMany({
+        data: [
+          {
+            id: generateUuidV7(),
+            garageId: primaryGarageId,
+            category: ExpenseCategory.RENT_UTILITIES,
+            amountVnd: 28000000,
+            occurredAt: today,
+            referenceCode: "CHI-MB-1126",
+            description: "Thuê mặt bằng xưởng & điện 3 pha tháng 11/2026",
+            recordedByEmail: "admin@autora.vn",
+          },
+          {
+            id: generateUuidV7(),
+            garageId: primaryGarageId,
+            category: ExpenseCategory.BASE_SALARY,
+            amountVnd: 32000000,
+            occurredAt: today,
+            referenceCode: "CHI-LUONG-1126",
+            description: "Lương cứng đội ngũ Cố vấn & Kỹ thuật viên",
+            recordedByEmail: "admin@autora.vn",
+          },
+          {
+            id: generateUuidV7(),
+            garageId: primaryGarageId,
+            category: ExpenseCategory.WASTE_DISPOSAL,
+            amountVnd: 1850000,
+            occurredAt: today,
+            referenceCode: "CHI-MT-1126",
+            description: "Thu gom xử lý dầu nhớt thải & giẻ lau công nghiệp",
+            recordedByEmail: "admin@autora.vn",
+          },
+        ],
       });
     }
   }
