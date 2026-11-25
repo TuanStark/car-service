@@ -9,6 +9,7 @@ import { Button } from "@/shared/ui/button";
 import { Card, CardHeader } from "@/shared/ui/card";
 import { ConfirmDialog } from "@/shared/ui/confirm-dialog";
 import { ErrorState, TableSkeleton } from "@/shared/ui/feedback";
+import { GalleryUploadField, ImageUploadField } from "@/shared/ui/image-upload";
 import { Input, Select, Textarea } from "@/shared/ui/input";
 import { StatusPill } from "@/shared/ui/status-badge";
 import { useToast } from "@/shared/ui/toast-provider";
@@ -84,6 +85,10 @@ function ServiceDetailContent({
   const [name, setName] = useState(data.name);
   const [shortSummary, setShortSummary] = useState(data.shortSummary);
   const [description, setDescription] = useState(data.description);
+  const [imageUrl, setImageUrl] = useState(data.imageUrl);
+  const [galleryUrls, setGalleryUrls] = useState<string[]>([
+    ...data.galleryUrls,
+  ]);
   const [priceVnd, setPriceVnd] = useState(String(data.priceVnd));
   const [originalPriceVnd, setOriginalPriceVnd] = useState(
     data.originalPriceVnd !== null ? String(data.originalPriceVnd) : ""
@@ -121,6 +126,11 @@ function ServiceDetailContent({
         name: name.trim(),
         shortSummary: shortSummary.trim(),
         description: description.trim(),
+        imageUrl: imageUrl.trim() || "/images/service-maintenance.jpg",
+        galleryUrls:
+          galleryUrls.length > 0
+            ? galleryUrls
+            : [imageUrl.trim() || "/images/service-maintenance.jpg"],
         priceVnd: parsedPrice,
         originalPriceVnd: parsedOrig,
         badge: (badge || null) as ServiceBadgeType,
@@ -367,6 +377,14 @@ function ServiceDetailContent({
               />
             </div>
           </div>
+
+          <ImageUploadField
+            label="Ảnh đại diện dịch vụ *"
+            value={imageUrl}
+            onChange={setImageUrl}
+          />
+
+          <GalleryUploadField urls={galleryUrls} onChange={setGalleryUrls} />
 
           <div>
             <label className="mb-1.5 block text-xs font-semibold text-ink">

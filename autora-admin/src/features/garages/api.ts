@@ -80,6 +80,33 @@ export function fetchAdminGarageDetail(id: string): Promise<GarageDetail> {
   return apiData<GarageDetail>(`/admin/garages/${id}`);
 }
 
+export interface CreateGaragePayload {
+  readonly slug: string;
+  readonly name: string;
+  readonly district: string;
+  readonly cityCode: GarageCityCode;
+  readonly cityLabel: string;
+  readonly fullAddress: string;
+  readonly phone?: string;
+  readonly verified?: boolean;
+  readonly status?: GarageStatus;
+  readonly isFeatured?: boolean;
+  readonly coverImageUrl?: string;
+  readonly openHours: string;
+  readonly bayCount: number;
+  readonly startingPriceVnd: number;
+  readonly summary: string;
+}
+
+export function createAdminGarage(
+  payload: CreateGaragePayload
+): Promise<GarageDetail> {
+  return apiData<GarageDetail>("/admin/garages", {
+    method: "POST",
+    body: payload,
+  });
+}
+
 export function updateAdminGarage(
   id: string,
   payload: Partial<{
@@ -93,6 +120,7 @@ export function updateAdminGarage(
     bayCount: number;
     startingPriceVnd: number;
     isFeatured: boolean;
+    coverImageUrl: string;
     summary: string;
   }>
 ): Promise<GarageDetail> {

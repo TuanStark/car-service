@@ -3,6 +3,7 @@ import { ConfigModule } from "@nestjs/config";
 import {
   appConfig,
   authConfig,
+  cloudinaryConfig,
   databaseConfig,
   redisConfig,
   throttleConfig,
@@ -17,7 +18,14 @@ import { validateEnv } from "./env.schema";
       cache: true,
       expandVariables: true,
       validate: validateEnv,
-      load: [appConfig, databaseConfig, redisConfig, authConfig, throttleConfig],
+      load: [
+        appConfig,
+        databaseConfig,
+        redisConfig,
+        authConfig,
+        throttleConfig,
+        cloudinaryConfig,
+      ],
     }),
   ],
   exports: [ConfigModule],

@@ -110,6 +110,12 @@ export class CreateServiceDto {
   @MaxLength(500)
   imageUrl?: string;
 
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  galleryUrls?: string[];
+
   @ApiProperty({ example: 450000 })
   @Type(() => Number)
   @IsInt()
@@ -215,6 +221,12 @@ export class UpdateServiceDto {
   @IsString()
   @MaxLength(500)
   imageUrl?: string;
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  galleryUrls?: string[];
 
   @ApiPropertyOptional()
   @IsOptional()

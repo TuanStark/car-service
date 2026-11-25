@@ -171,12 +171,12 @@ export function CustomersListView() {
                           : `Đăng ký ${formatViDate(item.createdAt)}`}
                       </td>
 
-                      <td className="px-5 py-3.5 text-right">
+                      <td className="px-5 py-3.5 text-right whitespace-nowrap">
                         <Link
                           href={`/customers/${item.id}`}
-                          className="inline-flex items-center gap-1 rounded-lg border border-line-strong bg-surface px-2.5 py-1.5 text-xs font-semibold text-ink hover:bg-surface-subtle"
+                          className="inline-flex h-8 items-center gap-1 rounded-lg border border-line-strong bg-surface px-2.5 text-xs font-semibold text-ink hover:border-brand hover:text-brand transition-colors"
                         >
-                          <Eye className="h-3.5 w-3.5 text-ink-secondary" />
+                          <Eye className="h-3.5 w-3.5" />
                           Xem hồ sơ
                         </Link>
                       </td>

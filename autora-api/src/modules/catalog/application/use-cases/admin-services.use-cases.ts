@@ -82,6 +82,10 @@ export class AdminServicesUseCases {
     });
 
     const img = dto.imageUrl?.trim() || "/images/service-maintenance.jpg";
+    const gallery =
+      dto.galleryUrls && dto.galleryUrls.length > 0
+        ? dto.galleryUrls.map((u) => u.trim()).filter(Boolean)
+        : [img];
 
     return this.uow.runInTransaction(async () => {
       const created = await this.serviceRepo.create({
@@ -93,7 +97,7 @@ export class AdminServicesUseCases {
         shortSummary: dto.shortSummary.trim(),
         description: dto.description.trim(),
         imageUrl: img,
-        galleryUrls: [img],
+        galleryUrls: gallery,
         priceVnd: pricing.priceVnd,
         originalPriceVnd: pricing.originalPriceVnd,
         discountPercent: pricing.discountPercent,

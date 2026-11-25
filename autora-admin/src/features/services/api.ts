@@ -52,6 +52,7 @@ export interface CreateServicePayload {
   readonly shortSummary: string;
   readonly description: string;
   readonly imageUrl?: string;
+  readonly galleryUrls?: readonly string[];
   readonly priceVnd: number;
   readonly originalPriceVnd?: number | null;
   readonly badge?: ServiceBadgeType;

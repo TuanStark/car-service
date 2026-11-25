@@ -9,6 +9,7 @@ import { Button } from "@/shared/ui/button";
 import { Card, CardHeader } from "@/shared/ui/card";
 import { ConfirmDialog } from "@/shared/ui/confirm-dialog";
 import { ErrorState, TableSkeleton } from "@/shared/ui/feedback";
+import { GARAGE_IMAGE_PRESETS, ImageUploadField } from "@/shared/ui/image-upload";
 import { Input, Select, Textarea } from "@/shared/ui/input";
 import {
   BookingStatusBadge,
@@ -83,6 +84,7 @@ function GarageDetailContent({
   const [startingPriceVnd, setStartingPriceVnd] = useState(
     data.startingPriceVnd
   );
+  const [coverImageUrl, setCoverImageUrl] = useState(data.coverImageUrl);
   const [summary, setSummary] = useState(data.summary);
   const [pendingStatusAction, setPendingStatusAction] = useState<{
     status?: GarageStatus;
@@ -104,6 +106,7 @@ function GarageDetailContent({
         openHours: openHours.trim(),
         bayCount: Number(bayCount),
         startingPriceVnd: Number(startingPriceVnd),
+        coverImageUrl: coverImageUrl.trim() || "/images/featured-garage.jpg",
         summary: summary.trim(),
       }),
     onSuccess: (updated) => {
@@ -359,6 +362,14 @@ function GarageDetailContent({
                 required
               />
             </div>
+
+            <ImageUploadField
+              label="Ảnh bìa garage *"
+              value={coverImageUrl}
+              onChange={setCoverImageUrl}
+              folder="garages"
+              presets={GARAGE_IMAGE_PRESETS}
+            />
 
             <Button
               type="submit"

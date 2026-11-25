@@ -2,27 +2,25 @@
 
 import React, { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { AlertCircle, X } from "lucide-react";
+import { AlertCircle, Pencil, X } from "lucide-react";
 import { ApiError } from "@/infrastructure/api/api-client";
 import { Button } from "@/shared/ui/button";
+import { GalleryUploadField, ImageUploadField } from "@/shared/ui/image-upload";
 import { Input, Select, Textarea } from "@/shared/ui/input";
 import { useToast } from "@/shared/ui/toast-provider";
+import { generateServiceSku, toSlug } from "@/shared/utils/slug";
 import {
   createAdminService,
   type ServiceBadgeType,
   type ServiceCategoryOption,
 } from "../api";
 
-function toSlug(input: string): string {
-  return input
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/đ/gi, "d")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 120);
-}
+const DEFAULT_IMAGE_BY_CATEGORY: Record<string, string> = {
+  MAINTENANCE: "/images/service-maintenance.jpg",
+  REPAIR: "/images/service-repair.jpg",
+  DETAILING: "/images/service-detailing.jpg",
+  TIRES: "/images/service-tires.jpg",
+};
 
 export function CreateServiceModal({
   open,
@@ -36,11 +34,14 @@ export function CreateServiceModal({
   const queryClient = useQueryClient();
   const { notifySuccess, notifyError } = useToast();
 
-  const [sku, setSku] = useState("");
-  const [name, setName] = useState("");
-  const [slug, setSlug] = useState("");
-  const [slugTouched, setSlugTouched] = useState(false);
   const [categoryId, setCategoryId] = useState("");
+  const [name, setName] = useState("");
+  const [customSku, setCustomSku] = useState<string | null>(null);
+  const [customSlug, setCustomSlug] = useState<string | null>(null);
+  const [editingIdentifiers, setEditingIdentifiers] = useState(false);
+  const [imageUrl, setImageUrl] = useState("/images/service-maintenance.jpg");
+  const [imageTouched, setImageTouched] = useState(false);
+  const [galleryUrls, setGalleryUrls] = useState<string[]>([]);
   const [priceVnd, setPriceVnd] = useState("");
   const [originalPriceVnd, setOriginalPriceVnd] = useState("");
   const [estimatedDuration, setEstimatedDuration] = useState("45 phút");
@@ -52,14 +53,23 @@ export function CreateServiceModal({
   const [isActive, setIsActive] = useState(true);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const effectiveCategoryId = categoryId || categories[0]?.id || "";
+  const effectiveCategory =
+    categories.find((c) => c.id === categoryId) ?? categories[0];
+  const effectiveCategoryId = effectiveCategory?.id ?? "";
+  const effectiveSku =
+    customSku ?? generateServiceSku(effectiveCategory?.code);
+  const effectiveSlug =
+    customSlug ?? (toSlug(name) || toSlug(effectiveSku));
 
   const resetForm = () => {
-    setSku("");
-    setName("");
-    setSlug("");
-    setSlugTouched(false);
     setCategoryId("");
+    setName("");
+    setCustomSku(null);
+    setCustomSlug(null);
+    setEditingIdentifiers(false);
+    setImageUrl("/images/service-maintenance.jpg");
+    setImageTouched(false);
+    setGalleryUrls([]);
     setPriceVnd("");
     setOriginalPriceVnd("");
     setEstimatedDuration("45 phút");
@@ -80,12 +90,17 @@ export function CreateServiceModal({
         : undefined;
 
       return createAdminService({
-        sku: sku.trim().toUpperCase(),
-        slug: slug.trim().toLowerCase(),
+        sku: effectiveSku.trim().toUpperCase(),
+        slug: effectiveSlug.trim().toLowerCase(),
         categoryId: effectiveCategoryId,
         name: name.trim(),
         shortSummary: shortSummary.trim(),
         description: description.trim(),
+        imageUrl: imageUrl.trim() || "/images/service-maintenance.jpg",
+        galleryUrls:
+          galleryUrls.length > 0
+            ? galleryUrls
+            : [imageUrl.trim() || "/images/service-maintenance.jpg"],
         priceVnd: parsedPrice,
         ...(parsedOrig !== undefined ? { originalPriceVnd: parsedOrig } : {}),
         badge: (badge || null) as ServiceBadgeType,
@@ -113,12 +128,26 @@ export function CreateServiceModal({
 
   if (!open) return null;
 
+  const handleCategoryChange = (nextCategoryId: string) => {
+    setCategoryId(nextCategoryId);
+    const nextCat = categories.find((c) => c.id === nextCategoryId);
+    if (customSku === null) {
+      setCustomSku(null);
+    }
+    if (!imageTouched && nextCat) {
+      setImageUrl(
+        DEFAULT_IMAGE_BY_CATEGORY[nextCat.code] ??
+          "/images/service-maintenance.jpg"
+      );
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
 
-    const normalizedSku = sku.trim().toUpperCase();
-    const normalizedSlug = slug.trim().toLowerCase();
+    const normalizedSku = effectiveSku.trim().toUpperCase();
+    const normalizedSlug = effectiveSlug.trim().toLowerCase();
     const parsedPrice = Number.parseInt(priceVnd, 10);
     const parsedOrig = originalPriceVnd.trim()
       ? Number.parseInt(originalPriceVnd, 10)
@@ -167,14 +196,14 @@ export function CreateServiceModal({
       aria-labelledby="create-service-title"
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4"
     >
-      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-line bg-surface shadow-2xl">
+      <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-line bg-surface shadow-2xl">
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-line bg-surface px-5 py-4">
           <div>
             <h3 id="create-service-title" className="text-sm sm:text-base font-bold text-ink">
               Thêm gói dịch vụ mới
             </h3>
             <p className="text-xs text-ink-secondary">
-              Giá và điều kiện hợp lệ sẽ được kiểm tra lại trên máy chủ.
+              Mã SKU và đường dẫn Slug được sinh tự động theo tên và danh mục.
             </p>
           </div>
           <button
@@ -203,39 +232,8 @@ export function CreateServiceModal({
               </label>
               <Input
                 value={name}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setName(val);
-                  if (!slugTouched) setSlug(toSlug(val));
-                }}
+                onChange={(e) => setName(e.target.value)}
                 placeholder="VD: Bảo dưỡng hệ thống phanh toàn diện"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-ink">
-                Mã SKU *
-              </label>
-              <Input
-                value={sku}
-                onChange={(e) => setSku(e.target.value.toUpperCase())}
-                placeholder="VD: ATR-PH-012"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-ink">
-                Đường dẫn (Slug) *
-              </label>
-              <Input
-                value={slug}
-                onChange={(e) => {
-                  setSlugTouched(true);
-                  setSlug(e.target.value);
-                }}
-                placeholder="bao-duong-he-thong-phanh"
                 required
               />
             </div>
@@ -246,7 +244,7 @@ export function CreateServiceModal({
               </label>
               <Select
                 value={effectiveCategoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
+                onChange={(e) => handleCategoryChange(e.target.value)}
                 required
               >
                 {categories.map((cat) => (
@@ -256,7 +254,76 @@ export function CreateServiceModal({
                 ))}
               </Select>
             </div>
+          </div>
 
+          {/* Auto-generated SKU & Slug */}
+          <div className="rounded-lg border border-line bg-surface-subtle/60 px-3.5 py-2.5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+                <span>
+                  <span className="text-ink-muted">Mã SKU tự động:</span>{" "}
+                  <code className="font-mono font-semibold text-ink">
+                    {effectiveSku}
+                  </code>
+                </span>
+                <span>
+                  <span className="text-ink-muted">Slug:</span>{" "}
+                  <code className="font-mono text-ink-secondary">
+                    /{effectiveSlug}
+                  </code>
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingIdentifiers((prev) => !prev)}
+                className="inline-flex items-center gap-1 text-[11px] font-semibold text-brand hover:underline cursor-pointer"
+              >
+                <Pencil className="h-3 w-3" />
+                {editingIdentifiers ? "Thu gọn" : "Tùy chỉnh mã"}
+              </button>
+            </div>
+
+            {editingIdentifiers && (
+              <div className="mt-3 grid grid-cols-1 gap-3 border-t border-line pt-3 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-[11px] font-semibold text-ink">
+                    Mã SKU (chữ hoa, số, -)
+                  </label>
+                  <Input
+                    value={effectiveSku}
+                    onChange={(e) =>
+                      setCustomSku(e.target.value.toUpperCase())
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-[11px] font-semibold text-ink">
+                    Đường dẫn (Slug)
+                  </label>
+                  <Input
+                    value={effectiveSlug}
+                    onChange={(e) =>
+                      setCustomSlug(e.target.value.toLowerCase())
+                    }
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Image & Gallery */}
+          <ImageUploadField
+            label="Ảnh đại diện dịch vụ *"
+            value={imageUrl}
+            onChange={(url) => {
+              setImageTouched(true);
+              setImageUrl(url);
+            }}
+          />
+
+          <GalleryUploadField urls={galleryUrls} onChange={setGalleryUrls} />
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-1.5 block text-xs font-semibold text-ink">
                 Giá bán (VNĐ) *
@@ -388,4 +455,3 @@ export function CreateServiceModal({
     </div>
   );
 }
-

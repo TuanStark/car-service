@@ -94,6 +94,8 @@ export function ServicesListView() {
     },
   });
 
+  const hasFilters = Boolean(query || categoryId || isActive);
+
   const resetFilters = () => {
     setQuery("");
     setCategoryId("");
@@ -104,9 +106,9 @@ export function ServicesListView() {
   return (
     <div className="space-y-5">
       <Card className="p-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
           <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="relative lg:col-span-2">
+            <div className="relative sm:col-span-2">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" />
               <Input
                 placeholder="Tìm tên dịch vụ, mã SKU, từ khóa..."
@@ -135,35 +137,32 @@ export function ServicesListView() {
               ))}
             </Select>
 
-            <div className="flex gap-2">
-              <Select
-                aria-label="Lọc trạng thái mở bán"
-                value={isActive}
-                onChange={(e) => {
-                  setIsActive(e.target.value);
-                  setPage(1);
-                }}
-              >
-                <option value="">Mọi trạng thái</option>
-                <option value="true">Đang mở bán</option>
-                <option value="false">Đã tạm ngưng</option>
-              </Select>
-
-              <Button
-                variant="secondary"
-                onClick={resetFilters}
-                title="Xóa bộ lọc"
-                className="px-3"
-              >
-                <RotateCcw className="h-3.5 w-3.5" />
-              </Button>
-            </div>
+            <Select
+              aria-label="Lọc trạng thái mở bán"
+              value={isActive}
+              onChange={(e) => {
+                setIsActive(e.target.value);
+                setPage(1);
+              }}
+            >
+              <option value="">Mọi trạng thái</option>
+              <option value="true">Đang mở bán</option>
+              <option value="false">Đã tạm ngưng</option>
+            </Select>
           </div>
 
-          <Button onClick={() => setCreateOpen(true)}>
-            <Plus className="h-4 w-4" />
-            Thêm dịch vụ mới
-          </Button>
+          <div className="flex shrink-0 items-center justify-end gap-2">
+            {hasFilters && (
+              <Button variant="secondary" onClick={resetFilters}>
+                <RotateCcw className="h-3.5 w-3.5" />
+                Xóa lọc
+              </Button>
+            )}
+            <Button onClick={() => setCreateOpen(true)}>
+              <Plus className="h-4 w-4" />
+              Thêm dịch vụ mới
+            </Button>
+          </div>
         </div>
       </Card>
 
@@ -200,9 +199,9 @@ export function ServicesListView() {
         {!isLoading && !isError && data && data.items.length > 0 && (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[820px] border-collapse text-left text-xs sm:text-sm">
+              <table className="w-full min-w-[880px] border-collapse text-left text-xs sm:text-sm">
                 <thead>
-                  <tr className="border-b border-line bg-surface-subtle text-[11px] font-semibold uppercase tracking-wide text-ink-secondary">
+                  <tr className="border-b border-line bg-surface-subtle/70 text-[11px] font-semibold uppercase tracking-wide text-ink-secondary">
                     <th className="px-5 py-3">Dịch vụ / SKU</th>
                     <th className="px-4 py-3">Danh mục</th>
                     <th className="px-4 py-3 text-right">Giá bán / Niêm yết</th>
@@ -215,33 +214,45 @@ export function ServicesListView() {
                   {data.items.map((item) => (
                     <tr
                       key={item.id}
-                      className="transition-colors hover:bg-surface-subtle/60"
+                      className="align-middle transition-colors hover:bg-surface-subtle/50"
                     >
                       <td className="px-5 py-3.5">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <Link
-                            href={`/services/${item.id}`}
-                            className="font-semibold text-ink hover:text-brand"
-                          >
-                            {item.name}
-                          </Link>
-                          {item.badge && (
-                            <StatusPill
-                              label={BADGE_LABELS[item.badge] ?? item.badge}
-                              tone="brand"
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-14 shrink-0 overflow-hidden rounded-lg border border-line bg-surface-subtle">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={item.imageUrl}
+                              alt={item.name}
+                              className="h-full w-full object-cover"
                             />
-                          )}
-                        </div>
-                        <div className="mt-0.5 text-[11px] font-mono text-ink-muted">
-                          {item.sku} • Đã đặt {item.bookedCount} lượt
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <Link
+                                href={`/services/${item.id}`}
+                                className="font-semibold text-ink hover:text-brand"
+                              >
+                                {item.name}
+                              </Link>
+                              {item.badge && (
+                                <StatusPill
+                                  label={BADGE_LABELS[item.badge] ?? item.badge}
+                                  tone="brand"
+                                />
+                              )}
+                            </div>
+                            <div className="mt-0.5 text-[11px] font-mono text-ink-muted">
+                              {item.sku} • Đã đặt {item.bookedCount} lượt
+                            </div>
+                          </div>
                         </div>
                       </td>
 
-                      <td className="px-4 py-3.5 text-xs text-ink-secondary">
+                      <td className="px-4 py-3.5 whitespace-nowrap text-xs text-ink-secondary">
                         {item.categoryLabel}
                       </td>
 
-                      <td className="px-4 py-3.5 text-right">
+                      <td className="px-4 py-3.5 whitespace-nowrap text-right">
                         <div className="font-semibold tabular-nums text-ink">
                           {formatVnd(item.priceVnd)}
                         </div>
@@ -269,14 +280,14 @@ export function ServicesListView() {
                         </div>
                       </td>
 
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 py-3.5 whitespace-nowrap">
                         <StatusPill
                           label={item.isActive ? "Đang mở bán" : "Tạm ngưng"}
                           tone={item.isActive ? "success" : "warning"}
                         />
                       </td>
 
-                      <td className="px-5 py-3.5 text-right">
+                      <td className="px-5 py-3.5 whitespace-nowrap text-right">
                         <div className="inline-flex items-center gap-2">
                           <Button
                             variant="secondary"
@@ -288,9 +299,9 @@ export function ServicesListView() {
                           </Button>
                           <Link
                             href={`/services/${item.id}`}
-                            className="inline-flex items-center gap-1 rounded-lg border border-line-strong bg-surface px-2.5 py-1.5 text-xs font-semibold text-ink hover:bg-surface-subtle"
+                            className="inline-flex h-8 items-center gap-1 rounded-lg border border-line-strong bg-surface px-2.5 text-xs font-semibold text-ink hover:border-brand hover:text-brand transition-colors"
                           >
-                            <Eye className="h-3.5 w-3.5 text-ink-secondary" />
+                            <Eye className="h-3.5 w-3.5" />
                             Chi tiết
                           </Link>
                         </div>
@@ -340,4 +351,3 @@ export function ServicesListView() {
     </div>
   );
 }
-

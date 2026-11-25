@@ -68,6 +68,11 @@ export const envSchema = z.object({
   SMTP_FROM: z.string().min(1).default("no-reply@autora.vn"),
 
   SWAGGER_ENABLED: booleanStringSchema.default(true),
+
+  CLOUDINARY_CLOUD_NAME: z.string().optional(),
+  CLOUDINARY_API_KEY: z.string().optional(),
+  CLOUDINARY_API_SECRET: z.string().optional(),
+  CLOUDINARY_UPLOAD_FOLDER: z.string().min(1).default("autora"),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;

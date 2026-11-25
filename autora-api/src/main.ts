@@ -36,6 +36,7 @@ async function bootstrap(): Promise<void> {
 
   await app.register(fastifyHelmet, {
     contentSecurityPolicy: swaggerEnabled ? false : undefined,
+    crossOriginResourcePolicy: { policy: "cross-origin" },
   });
 
   await app.register(fastifyCookie, {

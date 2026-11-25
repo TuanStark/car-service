@@ -110,21 +110,30 @@ export async function apiRequest<T>(
   options: RequestOptions = {}
 ): Promise<ApiEnvelope<T>> {
   const execute = async (token: string | null): Promise<Response> => {
+    const isFormData =
+      typeof FormData !== "undefined" && options.body instanceof FormData;
     const headers: Record<string, string> = {
       Accept: "application/json",
     };
-    if (options.body !== undefined) {
+    if (options.body !== undefined && !isFormData) {
       headers["Content-Type"] = "application/json";
     }
     if (token) {
       headers.Authorization = `Bearer ${token}`;
     }
 
+    const body =
+      options.body === undefined
+        ? undefined
+        : isFormData
+          ? (options.body as FormData)
+          : JSON.stringify(options.body);
+
     return fetch(`${API_BASE_URL}${path}`, {
       method: options.method ?? "GET",
       headers,
       credentials: "include",
-      body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+      body,
     });
   };
 

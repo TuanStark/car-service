@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Eye, MapPin, RotateCcw, Search } from "lucide-react";
+import { Eye, MapPin, Plus, RotateCcw, Search } from "lucide-react";
 import { ApiError } from "@/infrastructure/api/api-client";
 import { useDebouncedValue } from "@/shared/hooks/use-debounced-value";
 import { Button } from "@/shared/ui/button";
@@ -19,6 +19,7 @@ import { Input, Select } from "@/shared/ui/input";
 import { GarageStatusBadge, StatusPill } from "@/shared/ui/status-badge";
 import { formatVnd } from "@/shared/utils/format";
 import { fetchAdminGarages } from "../api";
+import { CreateGarageModal } from "./create-garage-modal";
 
 export function GaragesListView() {
   const searchParams = useSearchParams();
@@ -27,6 +28,7 @@ export function GaragesListView() {
   const [cityCode, setCityCode] = useState("");
   const [status, setStatus] = useState("");
   const [verified, setVerified] = useState(searchParams.get("verified") ?? "");
+  const [createOpen, setCreateOpen] = useState(false);
 
   const debouncedSearch = useDebouncedValue(search, 350);
 
@@ -58,49 +60,49 @@ export function GaragesListView() {
   return (
     <div className="space-y-5">
       <Card className="p-4">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          <div className="relative lg:col-span-2">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" />
-            <Input
-              placeholder="Tìm tên garage, quận/huyện, địa chỉ..."
-              value={search}
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+          <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="relative lg:col-span-2">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" />
+              <Input
+                placeholder="Tìm tên garage, quận/huyện, địa chỉ..."
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+                className="pl-9"
+              />
+            </div>
+
+            <Select
+              aria-label="Lọc khu vực"
+              value={cityCode}
               onChange={(e) => {
-                setSearch(e.target.value);
+                setCityCode(e.target.value);
                 setPage(1);
               }}
-              className="pl-9"
-            />
-          </div>
+            >
+              <option value="">Tất cả khu vực</option>
+              <option value="HCM">TP. Hồ Chí Minh</option>
+              <option value="HN">Hà Nội</option>
+              <option value="DN">Đà Nẵng</option>
+            </Select>
 
-          <Select
-            aria-label="Lọc khu vực"
-            value={cityCode}
-            onChange={(e) => {
-              setCityCode(e.target.value);
-              setPage(1);
-            }}
-          >
-            <option value="">Tất cả khu vực</option>
-            <option value="HCM">TP. Hồ Chí Minh</option>
-            <option value="HN">Hà Nội</option>
-            <option value="DN">Đà Nẵng</option>
-          </Select>
+            <Select
+              aria-label="Lọc trạng thái hoạt động"
+              value={status}
+              onChange={(e) => {
+                setStatus(e.target.value);
+                setPage(1);
+              }}
+            >
+              <option value="">Mọi trạng thái</option>
+              <option value="ACTIVE">Đang hoạt động</option>
+              <option value="INACTIVE">Tạm ngưng</option>
+              <option value="SUSPENDED">Đình chỉ</option>
+            </Select>
 
-          <Select
-            aria-label="Lọc trạng thái hoạt động"
-            value={status}
-            onChange={(e) => {
-              setStatus(e.target.value);
-              setPage(1);
-            }}
-          >
-            <option value="">Mọi trạng thái</option>
-            <option value="ACTIVE">Đang hoạt động</option>
-            <option value="INACTIVE">Tạm ngưng</option>
-            <option value="SUSPENDED">Đình chỉ</option>
-          </Select>
-
-          <div className="flex items-center gap-2">
             <Select
               aria-label="Lọc xác minh"
               value={verified}
@@ -113,11 +115,19 @@ export function GaragesListView() {
               <option value="true">Đã xác minh</option>
               <option value="false">Chưa xác minh</option>
             </Select>
+          </div>
+
+          <div className="flex shrink-0 items-center justify-end gap-2">
             {(search || cityCode || status || verified) && (
-              <Button variant="secondary" size="sm" onClick={resetFilters}>
+              <Button variant="secondary" onClick={resetFilters}>
                 <RotateCcw className="h-3.5 w-3.5" />
+                Xóa lọc
               </Button>
             )}
+            <Button onClick={() => setCreateOpen(true)}>
+              <Plus className="h-4 w-4" />
+              Thêm garage mới
+            </Button>
           </div>
         </div>
       </Card>
@@ -219,6 +229,11 @@ export function GaragesListView() {
           </>
         )}
       </Card>
+
+      <CreateGarageModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+      />
     </div>
   );
 }

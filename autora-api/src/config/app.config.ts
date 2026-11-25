@@ -63,3 +63,13 @@ export const throttleConfig = registerAs("throttle", () => {
     idempotencyTtlSeconds: env.IDEMPOTENCY_TTL_SECONDS,
   };
 });
+
+export const cloudinaryConfig = registerAs("cloudinary", () => {
+  const env = getValidatedEnv();
+  return {
+    cloudName: env.CLOUDINARY_CLOUD_NAME?.trim() || "",
+    apiKey: env.CLOUDINARY_API_KEY?.trim() || "",
+    apiSecret: env.CLOUDINARY_API_SECRET?.trim() || "",
+    uploadFolder: env.CLOUDINARY_UPLOAD_FOLDER.trim(),
+  };
+});

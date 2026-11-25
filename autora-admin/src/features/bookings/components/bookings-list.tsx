@@ -205,10 +205,10 @@ export function BookingsListView() {
                       <td className="px-4 py-3 text-right font-semibold text-ink tabular-nums">
                         {formatVnd(item.totalVnd)}
                       </td>
-                      <td className="px-5 py-3 text-right">
+                      <td className="px-5 py-3 text-right whitespace-nowrap">
                         <Link
                           href={`/bookings/${item.id}`}
-                          className="inline-flex items-center gap-1 rounded-lg border border-line-strong bg-surface px-2.5 py-1 text-xs font-semibold text-ink hover:border-brand hover:text-brand transition-colors"
+                          className="inline-flex h-8 items-center gap-1 rounded-lg border border-line-strong bg-surface px-2.5 text-xs font-semibold text-ink hover:border-brand hover:text-brand transition-colors"
                         >
                           <Eye className="h-3.5 w-3.5" />
                           Chi tiết

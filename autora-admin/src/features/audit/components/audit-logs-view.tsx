@@ -19,15 +19,16 @@ import { formatViDateTime } from "@/shared/utils/format";
 import { fetchAdminAuditLogs } from "../api";
 
 const EVENT_LABELS: Record<string, string> = {
-  "booking.status.updated": "Cập nhật trạng thái lịch hẹn",
-  "booking.created": "Tạo lịch hẹn mới",
-  "garage.created": "Thêm garage mới",
-  "garage.updated": "Cập nhật hồ sơ garage",
-  "garage.status.updated": "Đổi trạng thái garage",
-  "service.created": "Tạo gói dịch vụ mới",
-  "service.updated": "Cập nhật gói dịch vụ",
-  "service.status.updated": "Đổi trạng thái mở bán dịch vụ",
-  "auth.login": "Đăng nhập hệ thống",
+  "admin.booking.status_updated": "Cập nhật trạng thái lịch hẹn",
+  "admin.garage.created": "Thêm garage mới",
+  "admin.garage.updated": "Cập nhật hồ sơ garage",
+  "admin.garage.status_updated": "Đổi trạng thái garage",
+  "admin.service.created": "Tạo gói dịch vụ mới",
+  "admin.service.updated": "Cập nhật gói dịch vụ",
+  "admin.service.activated": "Kích hoạt mở bán dịch vụ",
+  "admin.service.deactivated": "Tạm ngưng gói dịch vụ",
+  "admin.media.presigned": "Cấp chữ ký upload Cloudinary",
+  "admin.media.uploaded": "Tải lên hình ảnh",
 };
 
 function formatPayloadPreview(payload: unknown): string {
@@ -97,7 +98,7 @@ export function AuditLogsView() {
             <option value="Booking">Lịch hẹn (Booking)</option>
             <option value="Garage">Garage</option>
             <option value="ServiceProduct">Dịch vụ (ServiceProduct)</option>
-            <option value="Auth">Xác thực (Auth)</option>
+            <option value="Media">Hình ảnh (Media)</option>
           </Select>
 
           <div className="flex justify-end">
