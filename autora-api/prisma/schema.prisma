@@ -312,6 +312,7 @@ model ServiceProduct {
   partRecipes    ServicePartRecipe[]
   bookingItems   BookingItem[]
   reviews        Review[]
+  warrantyRecords WarrantyRecord[]
 
   @@index([categoryId, deletedAt])
   @@index([isActive, categoryId, deletedAt])
@@ -354,6 +355,7 @@ model Garage {
   partUsages         BookingPartUsage[]
   equipments         WorkshopEquipment[]
   technicianProfiles TechnicianProfile[] @relation("TechPrimaryGarage")
+  warrantyRecords    WarrantyRecord[]
   bookings           Booking[]
   reviews        Review[]
 
@@ -417,8 +419,9 @@ model CustomerVehicle {
   updatedAt    DateTime        @updatedAt @map("updated_at")
   deletedAt    DateTime?       @map("deleted_at")
 
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  bookings Booking[]
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookings        Booking[]
+  warrantyRecords WarrantyRecord[]
 
   @@index([userId, deletedAt])
   @@index([licensePlate])
@@ -493,6 +496,8 @@ model Booking {
   paymentLogs        BookingPaymentLog[]
   partUsages         BookingPartUsage[]
   toolCheckouts      ToolCheckoutLog[]
+  warrantyRecords    WarrantyRecord[]
+  warrantyClaims     WarrantyClaim[]
 
   @@index([userId, createdAt])
   @@index([garageId, appointmentDate, appointmentTime, status])
@@ -581,6 +586,10 @@ model Review {
   vehicleLabel     String    @map("vehicle_label") @db.VarChar(120)
   rating           Int       @db.SmallInt
   comment          String    @db.Text
+  adminReply       String?   @map("admin_reply") @db.Text
+  repliedAt        DateTime? @map("replied_at")
+  repliedByEmail   String?   @map("replied_by_email") @db.VarChar(255)
+  isHidden         Boolean   @default(false) @map("is_hidden")
   createdAt        DateTime  @default(now()) @map("created_at")
   updatedAt        DateTime  @updatedAt @map("updated_at")
   deletedAt        DateTime? @map("deleted_at")
@@ -889,4 +898,80 @@ model TechnicianProfile {
 
   @@index([primaryGarageId, isActive])
   @@map("technician_profiles")
+}
+
+// ==============================================================================
+// PHASE 4: ELECTRONIC WARRANTIES & COMEBACK CLAIMS
+// ==============================================================================
+
+enum WarrantyStatus {
+  ACTIVE
+  CLAIMED
+  EXPIRED
+  VOIDED
+}
+
+enum WarrantyRootCause {
+  WORKMANSHIP
+  DEFECTIVE_PART
+  CUSTOMER_MISUSE
+  OTHER
+}
+
+enum WarrantyClaimStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  REJECTED
+}
+
+model WarrantyRecord {
+  id               String         @id @default(uuid()) @db.Uuid
+  warrantyCode     String         @unique @map("warranty_code") @db.VarChar(40)
+  bookingId        String         @map("booking_id") @db.Uuid
+  vehicleId        String?        @map("vehicle_id") @db.Uuid
+  garageId         String         @map("garage_id") @db.Uuid
+  serviceProductId String?        @map("service_product_id") @db.Uuid
+  serviceNameSnap  String         @map("service_name_snap") @db.VarChar(220)
+  licensePlate     String         @map("license_plate") @db.VarChar(24)
+  customerName     String         @map("customer_name") @db.VarChar(150)
+  warrantyLabel    String         @map("warranty_label") @db.VarChar(120)
+  startsAt         DateTime       @default(now()) @map("starts_at")
+  validUntilDate   DateTime       @map("valid_until_date") @db.Date
+  startOdoKm       Int            @default(0) @map("start_odo_km")
+  validUntilOdoKm  Int?           @map("valid_until_odo_km")
+  status           WarrantyStatus @default(ACTIVE)
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
+
+  booking        Booking          @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  vehicle        CustomerVehicle? @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+  garage         Garage           @relation(fields: [garageId], references: [id])
+  serviceProduct ServiceProduct?  @relation(fields: [serviceProductId], references: [id], onDelete: SetNull)
+  claims         WarrantyClaim[]
+
+  @@index([garageId, status])
+  @@index([licensePlate])
+  @@index([bookingId])
+  @@map("warranty_records")
+}
+
+model WarrantyClaim {
+  id               String              @id @default(uuid()) @db.Uuid
+  warrantyRecordId String              @map("warranty_record_id") @db.Uuid
+  claimBookingId   String?             @map("claim_booking_id") @db.Uuid
+  issueDescription String              @map("issue_description") @db.Text
+  rootCause        WarrantyRootCause   @default(WORKMANSHIP) @map("root_cause")
+  internalCostVnd  Int                 @default(0) @map("internal_cost_vnd")
+  resolution       String?             @db.Text
+  status           WarrantyClaimStatus @default(OPEN)
+  handledByEmail   String?             @map("handled_by_email") @db.VarChar(255)
+  createdAt        DateTime            @default(now()) @map("created_at")
+  updatedAt        DateTime            @updatedAt @map("updated_at")
+
+  warrantyRecord WarrantyRecord @relation(fields: [warrantyRecordId], references: [id], onDelete: Cascade)
+  claimBooking   Booking?       @relation(fields: [claimBookingId], references: [id], onDelete: SetNull)
+
+  @@index([warrantyRecordId, status])
+  @@map("warranty_claims")
 }

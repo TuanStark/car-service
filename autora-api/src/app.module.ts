@@ -30,6 +30,9 @@ import { MediaModule } from "@modules/media/media.module";
 import { ProcurementModule } from "@modules/procurement/procurement.module";
 import { EquipmentModule } from "@modules/equipment/equipment.module";
 import { WorkforceModule } from "@modules/workforce/workforce.module";
+import { WarrantiesModule } from "@modules/warranties/warranties.module";
+import { PromotionsModule } from "@modules/promotions/promotions.module";
+import { ReviewsModule } from "@modules/reviews/reviews.module";
 
 @Module({
   imports: [
@@ -67,6 +70,9 @@ import { WorkforceModule } from "@modules/workforce/workforce.module";
     ProcurementModule,
     EquipmentModule,
     WorkforceModule,
+    WarrantiesModule,
+    PromotionsModule,
+    ReviewsModule,
   ],
   providers: [
     {

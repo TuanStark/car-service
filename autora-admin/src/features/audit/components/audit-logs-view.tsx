@@ -59,6 +59,13 @@ const EVENT_LABELS: Record<string, string> = {
   "admin.equipment.tool_returned": "Nhận trả công cụ chuyên dụng",
   "admin.staff.created": "Tạo tài khoản nhân sự / KTV",
   "admin.staff.technician_updated": "Cập nhật hồ sơ chuyên môn KTV",
+  "admin.warranty.claim_created": "Mở phiếu xử lý bảo hành / comeback",
+  "admin.warranty.claim_updated": "Cập nhật kết quả bảo hành",
+  "admin.coupon.created": "Tạo mã khuyến mãi mới",
+  "admin.coupon.updated": "Cập nhật mã khuyến mãi",
+  "admin.review.replied": "Phản hồi đánh giá khách hàng",
+  "admin.review.hidden": "Ẩn đánh giá vi phạm",
+  "admin.review.unhidden": "Hiển thị lại đánh giá",
 };
 
 function formatPayloadPreview(payload: unknown): string {

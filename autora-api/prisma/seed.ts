@@ -1104,6 +1104,60 @@ async function main(): Promise<void> {
     }
   }
 
+  // ── Phase 4: Sample Electronic Warranty & Low-Rating Review ────────────
+  const completedRo = await prisma.booking.findFirst({
+    where: { status: BookingStatus.COMPLETED },
+    include: { items: true },
+  });
+  if (completedRo && completedRo.items[0]) {
+    const existingW = await prisma.warrantyRecord.count({
+      where: { bookingId: completedRo.id },
+    });
+    if (existingW === 0) {
+      const validUntil = new Date();
+      validUntil.setMonth(validUntil.getMonth() + 6);
+      await prisma.warrantyRecord.create({
+        data: {
+          id: generateUuidV7(),
+          warrantyCode: `BH-${completedRo.orderCode.slice(-6)}-101`,
+          bookingId: completedRo.id,
+          vehicleId: completedRo.vehicleId,
+          garageId: completedRo.garageId,
+          serviceProductId: completedRo.items[0].serviceProductId,
+          serviceNameSnap: completedRo.items[0].serviceNameSnap,
+          licensePlate: completedRo.licensePlate,
+          customerName: completedRo.customerName,
+          warrantyLabel: "6 tháng / 10.000 km",
+          validUntilDate: validUntil,
+          startOdoKm: completedRo.odoKm,
+          validUntilOdoKm: completedRo.odoKm + 10_000,
+        },
+      });
+    }
+  }
+
+  const anyCustomer = await prisma.user.findFirst({
+    where: { userRoles: { some: { role: { code: "customer" } } } },
+  });
+  if (anyCustomer && primaryGarageId) {
+    const lowReviewCount = await prisma.review.count({
+      where: { rating: { lte: 2 } },
+    });
+    if (lowReviewCount === 0) {
+      await prisma.review.create({
+        data: {
+          id: generateUuidV7(),
+          userId: anyCustomer.id,
+          garageId: primaryGarageId,
+          vehicleLabel: "Mazda CX-5 (2023)",
+          rating: 2,
+          comment:
+            "Thời gian chờ nhận xe hơi lâu vào giờ cao điểm sáng thứ 7, nhưng kỹ thuật viên làm cẩn thận.",
+        },
+      });
+    }
+  }
+
   console.log("[Seed] AUTORA database seeded successfully (Admin: admin@autora.vn / AutoraAdmin@2026).");
 }
 

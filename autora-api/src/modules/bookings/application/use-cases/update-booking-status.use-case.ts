@@ -1,4 +1,6 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Injectable, Inject } from "@nestjs/common";
+import { generateUuidV7 } from "@core/utils/uuid.util";
+import { parseWarrantyMonths } from "@modules/warranties/application/use-cases/warranties.use-cases";
 import type { AuthenticatedUser } from "@core/decorators/current-user.decorator";
 import {
   EntityConflictException,
@@ -93,6 +95,49 @@ export class UpdateBookingStatusUseCase {
       if (!refreshed) {
         throw new EntityNotFoundException("Lịch hẹn dịch vụ", id);
       }
+
+      if (dto.status === "COMPLETED" && typeof this.uow.getClient === "function") {
+        const client = this.uow.getClient();
+        const existingWarranties = await client.warrantyRecord.count({
+          where: { bookingId: id },
+        });
+        if (existingWarranties === 0 && refreshed.items.length > 0) {
+          for (const item of refreshed.items) {
+            const svc = item.serviceProductId
+              ? await client.serviceProduct.findUnique({
+                  where: { id: item.serviceProductId },
+                  select: { warrantyLabel: true },
+                })
+              : null;
+            const label = svc?.warrantyLabel ?? "6 tháng / 5.000 km";
+            const months = parseWarrantyMonths(label);
+            const startsAt = new Date();
+            const validUntil = new Date(startsAt);
+            validUntil.setMonth(validUntil.getMonth() + months);
+
+            await client.warrantyRecord.create({
+              data: {
+                id: generateUuidV7(),
+                warrantyCode: `BH-${refreshed.orderCode.slice(-6)}-${Math.floor(100 + Math.random() * 900)}`,
+                bookingId: refreshed.id,
+                vehicleId: refreshed.vehicleId,
+                garageId: refreshed.garageId,
+                serviceProductId: item.serviceProductId,
+                serviceNameSnap: item.serviceNameSnap,
+                licensePlate: refreshed.licensePlate,
+                customerName: refreshed.customerName,
+                warrantyLabel: label,
+                startsAt,
+                validUntilDate: validUntil,
+                startOdoKm: refreshed.odoKm,
+                validUntilOdoKm: refreshed.odoKm + 10_000,
+                status: "ACTIVE",
+              },
+            });
+          }
+        }
+      }
+
       return refreshed;
     });
   }
