@@ -1,0 +1,420 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==============================================================================
+// ENUMS
+// ==============================================================================
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum VehicleBodyType {
+  ALL
+  SEDAN
+  SUV
+  MPV
+  EV
+}
+
+enum ServiceBadge {
+  BEST_SELLER
+  PROMO
+  NEW
+  RECOMMENDED
+}
+
+enum CityCode {
+  HCM
+  HN
+  DN
+}
+
+enum BookingStatus {
+  PENDING_CONFIRMATION
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  PAY_AT_GARAGE
+  VIETQR
+  VNPAY
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  REFUNDED
+}
+
+enum CouponDiscountType {
+  PERCENTAGE
+  FIXED_VND
+}
+
+// ==============================================================================
+// IAM & AUDIT MODELS
+// ==============================================================================
+
+model User {
+  id           String     @id @default(uuid()) @db.Uuid
+  email        String     @unique @db.VarChar(255)
+  phone        String?    @unique @db.VarChar(20)
+  passwordHash String     @map("password_hash") @db.VarChar(255)
+  fullName     String     @map("full_name") @db.VarChar(150)
+  avatarUrl    String?    @map("avatar_url") @db.VarChar(500)
+  status       UserStatus @default(ACTIVE)
+  lastLoginAt  DateTime?  @map("last_login_at")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  deletedAt    DateTime?  @map("deleted_at")
+
+  userRoles     UserRole[]
+  refreshTokens RefreshToken[]
+  vehicles      CustomerVehicle[]
+  bookings      Booking[]
+  reviews       Review[]
+  ownedGarages  Garage[]          @relation("GarageOwner")
+
+  @@index([email, deletedAt])
+  @@index([status, deletedAt])
+  @@map("users")
+}
+
+model Role {
+  id          String   @id @default(uuid()) @db.Uuid
+  code        String   @unique @db.VarChar(50)
+  name        String   @db.VarChar(100)
+  description String?  @db.VarChar(255)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  userRoles       UserRole[]
+  rolePermissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String   @id @default(uuid()) @db.Uuid
+  action      String   @db.VarChar(50)
+  subject     String   @db.VarChar(80)
+  description String?  @db.VarChar(255)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  rolePermissions RolePermission[]
+
+  @@unique([action, subject])
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String @map("role_id") @db.Uuid
+  permissionId String @map("permission_id") @db.Uuid
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model UserRole {
+  userId     String   @map("user_id") @db.Uuid
+  roleId     String   @map("role_id") @db.Uuid
+  assignedAt DateTime @default(now()) @map("assigned_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@index([roleId])
+  @@map("user_roles")
+}
+
+model RefreshToken {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  familyId   String    @map("family_id") @db.Uuid
+  tokenHash  String    @unique @map("token_hash") @db.VarChar(255)
+  userAgent  String?   @map("user_agent") @db.VarChar(500)
+  ipAddress  String?   @map("ip_address") @db.VarChar(64)
+  expiresAt  DateTime  @map("expires_at")
+  revokedAt  DateTime? @map("revoked_at")
+  replacedBy String?   @map("replaced_by") @db.Uuid
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+  @@index([familyId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+model AuditLog {
+  id            String   @id @default(uuid()) @db.Uuid
+  correlationId String?  @map("correlation_id") @db.VarChar(64)
+  actorUserId   String?  @map("actor_user_id") @db.Uuid
+  actorEmail    String?  @map("actor_email") @db.VarChar(255)
+  eventName     String   @map("event_name") @db.VarChar(120)
+  resourceType  String   @map("resource_type") @db.VarChar(80)
+  resourceId    String?  @map("resource_id") @db.VarChar(120)
+  payloadJson   Json?    @map("payload_json")
+  ipAddress     String?  @map("ip_address") @db.VarChar(64)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([actorUserId, createdAt])
+  @@index([eventName, createdAt])
+  @@index([resourceType, resourceId])
+  @@map("audit_logs")
+}
+
+// ==============================================================================
+// AUTORA CATALOG & GARAGE BUSINESS MODELS
+// ==============================================================================
+
+model ServiceCategory {
+  id                String    @id @default(uuid()) @db.Uuid
+  code              String    @unique @db.VarChar(80)
+  displayNumber     String    @map("display_number") @db.VarChar(10)
+  title             String    @db.VarChar(150)
+  shortLabel        String    @map("short_label") @db.VarChar(100)
+  description       String    @db.Text
+  imageUrl          String    @map("image_url") @db.VarChar(500)
+  startingPriceVnd  Int       @map("starting_price_vnd")
+  estimatedDuration String    @map("estimated_duration") @db.VarChar(60)
+  highlights        String[]  @default([])
+  sortOrder         Int       @default(0) @map("sort_order")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  deletedAt         DateTime? @map("deleted_at")
+
+  services ServiceProduct[]
+
+  @@index([deletedAt, sortOrder])
+  @@map("service_categories")
+}
+
+model ServiceProduct {
+  id                    String            @id @default(uuid()) @db.Uuid
+  sku                   String            @unique @db.VarChar(40)
+  slug                  String            @unique @db.VarChar(180)
+  categoryId            String            @map("category_id") @db.Uuid
+  name                  String            @db.VarChar(220)
+  shortSummary          String            @map("short_summary") @db.VarChar(400)
+  description           String            @db.Text
+  imageUrl              String            @map("image_url") @db.VarChar(500)
+  galleryUrls           String[]          @default([]) @map("gallery_urls")
+  priceVnd              Int               @map("price_vnd")
+  originalPriceVnd      Int?              @map("original_price_vnd")
+  discountPercent       Int?              @map("discount_percent")
+  badge                 ServiceBadge?
+  ratingAvg             Decimal           @default(5.0) @map("rating_avg") @db.Decimal(3, 2)
+  reviewCount           Int               @default(0) @map("review_count")
+  bookedCount           Int               @default(0) @map("booked_count")
+  estimatedDuration     String            @map("estimated_duration") @db.VarChar(60)
+  warrantyLabel         String            @map("warranty_label") @db.VarChar(120)
+  compatibleVehicles    VehicleBodyType[] @default([ALL]) @map("compatible_vehicles")
+  compatibleBrandsLabel String            @map("compatible_brands_label") @db.VarChar(200)
+  includedSteps         String[]          @default([]) @map("included_steps")
+  specificationsJson    Json              @default("[]") @map("specifications_json")
+  isFeatured            Boolean           @default(false) @map("is_featured")
+  createdAt             DateTime          @default(now()) @map("created_at")
+  updatedAt             DateTime          @updatedAt @map("updated_at")
+  deletedAt             DateTime?         @map("deleted_at")
+
+  category       ServiceCategory @relation(fields: [categoryId], references: [id])
+  garageServices GarageService[]
+  bookingItems   BookingItem[]
+  reviews        Review[]
+
+  @@index([categoryId, deletedAt])
+  @@index([priceVnd, deletedAt])
+  @@index([isFeatured, bookedCount])
+  @@map("service_products")
+}
+
+model Garage {
+  id               String    @id @default(uuid()) @db.Uuid
+  slug             String    @unique @db.VarChar(180)
+  ownerUserId      String?   @map("owner_user_id") @db.Uuid
+  name             String    @db.VarChar(200)
+  district         String    @db.VarChar(120)
+  cityCode         CityCode  @map("city_code")
+  cityLabel        String    @map("city_label") @db.VarChar(80)
+  fullAddress      String    @map("full_address") @db.VarChar(350)
+  phone            String?   @db.VarChar(20)
+  ratingAvg        Decimal   @default(5.0) @map("rating_avg") @db.Decimal(3, 2)
+  reviewCount      Int       @default(0) @map("review_count")
+  verified         Boolean   @default(false)
+  isFeatured       Boolean   @default(false) @map("is_featured")
+  coverImageUrl    String    @map("cover_image_url") @db.VarChar(500)
+  openHours        String    @map("open_hours") @db.VarChar(80)
+  bayCount         Int       @default(4) @map("bay_count")
+  startingPriceVnd Int       @map("starting_price_vnd")
+  certifications   String[]  @default([])
+  summary          String    @db.Text
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  deletedAt        DateTime? @map("deleted_at")
+
+  owner          User?           @relation("GarageOwner", fields: [ownerUserId], references: [id])
+  garageServices GarageService[]
+  bookings       Booking[]
+  reviews        Review[]
+
+  @@index([cityCode, verified, deletedAt])
+  @@index([isFeatured, ratingAvg])
+  @@map("garages")
+}
+
+model GarageService {
+  garageId         String   @map("garage_id") @db.Uuid
+  serviceProductId String   @map("service_product_id") @db.Uuid
+  customPriceVnd   Int?     @map("custom_price_vnd")
+  isAvailable      Boolean  @default(true) @map("is_available")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  garage         Garage         @relation(fields: [garageId], references: [id], onDelete: Cascade)
+  serviceProduct ServiceProduct @relation(fields: [serviceProductId], references: [id], onDelete: Cascade)
+
+  @@id([garageId, serviceProductId])
+  @@index([serviceProductId, isAvailable])
+  @@map("garage_services")
+}
+
+// ==============================================================================
+// CUSTOMER VEHICLES, COUPONS, BOOKINGS & REVIEWS
+// ==============================================================================
+
+model CustomerVehicle {
+  id           String          @id @default(uuid()) @db.Uuid
+  userId       String          @map("user_id") @db.Uuid
+  brand        String          @db.VarChar(80)
+  model        String          @db.VarChar(100)
+  year         String          @db.VarChar(10)
+  bodyType     VehicleBodyType @default(SEDAN) @map("body_type")
+  licensePlate String          @map("license_plate") @db.VarChar(24)
+  currentOdoKm Int             @default(0) @map("current_odo_km")
+  isPrimary    Boolean         @default(false) @map("is_primary")
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
+  deletedAt    DateTime?       @map("deleted_at")
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookings Booking[]
+
+  @@index([userId, deletedAt])
+  @@index([licensePlate])
+  @@map("customer_vehicles")
+}
+
+model Coupon {
+  id             String             @id @default(uuid()) @db.Uuid
+  code           String             @unique @db.VarChar(40)
+  description    String             @db.VarChar(255)
+  discountType   CouponDiscountType @map("discount_type")
+  discountValue  Int                @map("discount_value")
+  maxDiscountVnd Int?               @map("max_discount_vnd")
+  minOrderVnd    Int                @default(0) @map("min_order_vnd")
+  usageLimit     Int?               @map("usage_limit")
+  usedCount      Int                @default(0) @map("used_count")
+  startsAt       DateTime           @map("starts_at")
+  expiresAt      DateTime           @map("expires_at")
+  isActive       Boolean            @default(true) @map("is_active")
+  createdAt      DateTime           @default(now()) @map("created_at")
+  updatedAt      DateTime           @updatedAt @map("updated_at")
+  deletedAt      DateTime?          @map("deleted_at")
+
+  bookings Booking[]
+
+  @@index([code, isActive, deletedAt])
+  @@map("coupons")
+}
+
+model Booking {
+  id              String        @id @default(uuid()) @db.Uuid
+  orderCode       String        @unique @map("order_code") @db.VarChar(32)
+  userId          String?       @map("user_id") @db.Uuid
+  garageId        String        @map("garage_id") @db.Uuid
+  vehicleId       String?       @map("vehicle_id") @db.Uuid
+  couponId        String?       @map("coupon_id") @db.Uuid
+  appointmentDate DateTime      @map("appointment_date") @db.Date
+  appointmentTime String        @map("appointment_time") @db.VarChar(10)
+  customerName    String        @map("customer_name") @db.VarChar(150)
+  customerPhone   String        @map("customer_phone") @db.VarChar(20)
+  vehicleLabel    String        @map("vehicle_label") @db.VarChar(160)
+  licensePlate    String        @map("license_plate") @db.VarChar(24)
+  odoKm           Int           @map("odo_km")
+  paymentMethod   PaymentMethod @default(PAY_AT_GARAGE) @map("payment_method")
+  paymentStatus   PaymentStatus @default(UNPAID) @map("payment_status")
+  status          BookingStatus @default(CONFIRMED)
+  subtotalVnd     Int           @map("subtotal_vnd")
+  discountVnd     Int           @default(0) @map("discount_vnd")
+  totalVnd        Int           @map("total_vnd")
+  notes           String?       @db.Text
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  deletedAt       DateTime?     @map("deleted_at")
+
+  user    User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  garage  Garage           @relation(fields: [garageId], references: [id])
+  vehicle CustomerVehicle? @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+  coupon  Coupon?          @relation(fields: [couponId], references: [id], onDelete: SetNull)
+  items   BookingItem[]
+
+  @@index([userId, createdAt])
+  @@index([garageId, appointmentDate, appointmentTime, status])
+  @@index([status, deletedAt])
+  @@map("bookings")
+}
+
+model BookingItem {
+  id               String @id @default(uuid()) @db.Uuid
+  bookingId        String @map("booking_id") @db.Uuid
+  serviceProductId String @map("service_product_id") @db.Uuid
+  serviceNameSnap  String @map("service_name_snap") @db.VarChar(220)
+  skuSnap          String @map("sku_snap") @db.VarChar(40)
+  unitPriceVnd     Int    @map("unit_price_vnd")
+  quantity         Int    @default(1)
+  lineTotalVnd     Int    @map("line_total_vnd")
+
+  booking        Booking        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  serviceProduct ServiceProduct @relation(fields: [serviceProductId], references: [id])
+
+  @@index([bookingId])
+  @@map("booking_items")
+}
+
+model Review {
+  id               String    @id @default(uuid()) @db.Uuid
+  userId           String    @map("user_id") @db.Uuid
+  garageId         String?   @map("garage_id") @db.Uuid
+  serviceProductId String?   @map("service_product_id") @db.Uuid
+  vehicleLabel     String    @map("vehicle_label") @db.VarChar(120)
+  rating           Int       @db.SmallInt
+  comment          String    @db.Text
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  deletedAt        DateTime? @map("deleted_at")
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  garage         Garage?         @relation(fields: [garageId], references: [id], onDelete: Cascade)
+  serviceProduct ServiceProduct? @relation(fields: [serviceProductId], references: [id], onDelete: Cascade)
+
+  @@index([garageId, deletedAt, createdAt])
+  @@index([serviceProductId, deletedAt, createdAt])
+  @@map("reviews")
+}

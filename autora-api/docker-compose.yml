@@ -1,0 +1,72 @@
+name: autora-api-local
+
+services:
+  postgres:
+    image: postgres:16.8-alpine
+    container_name: autora-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: autora
+      POSTGRES_PASSWORD: autora_dev_password
+      POSTGRES_DB: autora_db
+      TZ: Asia/Ho_Chi_Minh
+    ports:
+      - "5433:5432"
+    volumes:
+      - autora_pg_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U autora -d autora_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: autora-redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --requirepass autora_redis_dev
+      --appendonly yes
+      --maxmemory 256mb
+      --maxmemory-policy noeviction
+    ports:
+      - "6380:6379"
+    volumes:
+      - autora_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "autora_redis_dev", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mailpit:
+    image: axllent/mailpit:v1.22
+    container_name: autora-mailpit
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8025/livez"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  adminer:
+    image: adminer:4.8.1-standalone
+    container_name: autora-adminer
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+      ADMINER_DESIGN: pepa-linha
+
+volumes:
+  autora_pg_data:
+  autora_redis_data:
