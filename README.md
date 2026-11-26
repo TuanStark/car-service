@@ -123,7 +123,13 @@ Truy cập trang quản trị tại `http://localhost:3001` (tài khoản Admin 
 
 ---
 
-## 5. Tài liệu chi tiết từng thành phần
+## 5. Bộ Tài liệu Nghiệp vụ & Kỹ thuật (Dành cho Team & Onboarding)
+
+- **Nghiệp vụ & Quy tắc bất biến:** [`docs/01-BUSINESS-DOMAIN.md`](./docs/01-BUSINESS-DOMAIN.md)
+- **Kiến trúc Hệ thống & Hợp đồng Tích hợp:** [`docs/02-SYSTEM-ARCHITECTURE.md`](./docs/02-SYSTEM-ARCHITECTURE.md)
+- **Cẩm nang Onboarding & Quy tắc Code An toàn:** [`docs/03-DEVELOPER-ONBOARDING-AND-SAFETY-GUIDE.md`](./docs/03-DEVELOPER-ONBOARDING-AND-SAFETY-GUIDE.md)
+
+### Tài liệu chi tiết từng thành phần
 
 - Kiến trúc Frontend: [`autora-web/ARCHITECTURE.md`](./autora-web/ARCHITECTURE.md)
 - Tài liệu Core Backend: [`autora-api/README.md`](./autora-api/README.md)
